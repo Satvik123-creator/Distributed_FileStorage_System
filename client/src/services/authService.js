@@ -1,0 +1,36 @@
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:8000/api",
+  headers: { "Content-Type": "application/json" },
+});
+
+// attach token automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const login = async ({ email, password }) => {
+  const res = await api.post("/auth/login", { email, password });
+  return res.data;
+};
+
+const register = async ({ name, email, password }) => {
+  const res = await api.post("/auth/register", { name, email, password });
+  return res.data;
+};
+
+const getProfile = async () => {
+  const res = await api.get("/auth/profile");
+  return res.data;
+};
+
+export default {
+  login,
+  register,
+  getProfile,
+};

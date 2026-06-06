@@ -1,0 +1,29 @@
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:8000/api",
+  headers: { "Content-Type": "application/json" },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const getStorageHealth = async () => {
+  const response = await api.get("/storage/health");
+  return response.data?.data || {};
+};
+
+const repairFile = async (fileId) => {
+  const response = await api.post(`/storage/repair/${fileId}`);
+  return response.data?.data || response.data;
+};
+
+export default {
+  getStorageHealth,
+  repairFile,
+};
