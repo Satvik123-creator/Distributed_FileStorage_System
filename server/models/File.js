@@ -88,6 +88,18 @@ const fileSchema = new mongoose.Schema(
       ref: "File",
       default: null,
     },
+    encrypted: {
+      type: Boolean,
+      default: false,
+    },
+    encryptionVersion: {
+      type: Number,
+      default: null,
+    },
+    encryptionIv: {
+      type: String,
+      default: null,
+    },
   },
   {
     versionKey: false,

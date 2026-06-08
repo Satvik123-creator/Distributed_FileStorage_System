@@ -13,6 +13,7 @@ import { updateNodeStats } from "../services/loadBalancerService.js";
 import { checkQuota, updateStorageUsed } from "../services/quotaService.js";
 import { checkShareAccess } from "../services/shareService.js";
 import { calculateHash, findExistingByHash, createDedupReference } from "../services/dedupService.js";
+import { encryptBuffer, decryptBuffer } from "../services/encryptionService.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -113,18 +114,24 @@ const uploadFile = asyncHandler(async (req, res) => {
   const primaryNode = await chooseNode();
   const storedName = generateUniqueFileName(req.file.originalname);
 
+  // Encrypt the file buffer before storing
+  const { encryptedBuffer, encryptionIv, encryptionVersion } = await encryptBuffer(
+    req.file.buffer,
+    userId,
+  );
+
   let savedPath;
 
   try {
     savedPath = await storeFile({
-      buffer: req.file.buffer,
+      buffer: encryptedBuffer,
       nodeLocation: primaryNode,
       userId,
       storedName,
     });
 
     const { replicaNode } = await replicationService.createReplica({
-      buffer: req.file.buffer,
+      buffer: encryptedBuffer,
       primaryNode,
       userId,
       storedName,
@@ -143,6 +150,9 @@ const uploadFile = asyncHandler(async (req, res) => {
       uploadedAt: new Date(),
       fileHash,
       referenceCount: 1,
+      encrypted: true,
+      encryptionVersion,
+      encryptionIv,
     });
 
     await updateNodeStats(primaryNode);
@@ -153,6 +163,7 @@ const uploadFile = asyncHandler(async (req, res) => {
     logAction(req.user._id, logActionName, {
       fileId: file._id,
       fileName: file.originalName,
+      encrypted: true,
     }).catch(() => {});
 
     return res.status(201).json(
@@ -164,6 +175,7 @@ const uploadFile = asyncHandler(async (req, res) => {
         fileGroupId: file.fileGroupId,
         isVersion: file.version > 1,
         deduplicated: false,
+        encrypted: true,
       }),
     );
   } catch (error) {
@@ -179,7 +191,7 @@ const downloadFile = asyncHandler(async (req, res) => {
   const { fileId } = req.params;
   const userId = req.user._id.toString();
 
-  const { filePath, originalName, mimeType, version } = await fileService.downloadFile(
+  const { filePath, originalName, mimeType, version, encrypted, encryptionIv } = await fileService.downloadFile(
     fileId,
     userId,
   );
@@ -187,6 +199,16 @@ const downloadFile = asyncHandler(async (req, res) => {
   const ext = path.extname(originalName);
   const base = path.basename(originalName, ext);
   const displayName = version > 1 ? `${base}_v${version}${ext}` : originalName;
+
+  if (encrypted && encryptionIv) {
+    const encryptedData = await fs.readFile(filePath);
+    const decrypted = await decryptBuffer(encryptedData, encryptionIv, userId);
+
+    res.setHeader("Content-Type", mimeType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${displayName}"`);
+    res.setHeader("Content-Length", decrypted.length);
+    return res.send(decrypted);
+  }
 
   res.setHeader("Content-Type", mimeType || "application/octet-stream");
   return res.download(filePath, displayName, (err) => {

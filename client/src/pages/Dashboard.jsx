@@ -58,13 +58,14 @@ const Dashboard = () => {
   const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
   const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
   const [dedupStats, setDedupStats] = useState({ totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false, algorithm: null, keyVersion: null, encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData, dedupStatsData] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData, dedupStatsData, encStatus] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
@@ -72,6 +73,7 @@ const Dashboard = () => {
         storageService.getFailoverStats(),
         authService.getStorageInfo(),
         storageService.getDedupStats(),
+        storageService.getEncryptionStatus(),
       ]);
 
       setFiles(fileList);
@@ -80,6 +82,7 @@ const Dashboard = () => {
       setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
       setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
       setDedupStats(dedupStatsData || { totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
+      setEncryptionStatus(encStatus || { enabled: false, algorithm: null, keyVersion: null, encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
       // Merge stats into health for richer node display
       if (storageStats) {
         const mergedHealth = { ...storageHealth };
@@ -184,6 +187,14 @@ const Dashboard = () => {
         tone: "teal",
       },
       {
+        label: "Encryption",
+        value: encryptionStatus.enabled ? "Active" : "Inactive",
+        detail: encryptionStatus.enabled
+          ? `${encryptionStatus.algorithm} (v${encryptionStatus.keyVersion}) — ${encryptionStatus.encryptedFileCount}/${encryptionStatus.totalFileCount} files encrypted`
+          : "No encryption key configured",
+        tone: encryptionStatus.enabled ? "indigo" : "slate",
+      },
+      {
         label: "Total Failovers",
         value: failoverStats.totalFailovers,
         detail: "Automatic failover events",
@@ -196,7 +207,7 @@ const Dashboard = () => {
         tone: "rose",
       },
     ];
-  }, [activities, files, health, totalStorageUsed, failoverStats, dedupStats]);
+  }, [activities, files, health, totalStorageUsed, failoverStats, dedupStats, encryptionStatus]);
 
   const latestFiles = useMemo(
     () =>

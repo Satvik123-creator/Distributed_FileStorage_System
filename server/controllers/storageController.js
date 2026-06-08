@@ -67,10 +67,16 @@ const getFailoverStatsHandler = asyncHandler(async (req, res) => {
 });
 
 import { getDedupStats } from "../services/dedupService.js";
+import { getEncryptionStatus } from "../services/encryptionService.js";
 
 const getDedupStatsHandler = asyncHandler(async (req, res) => {
   const stats = await getDedupStats(req.user._id);
   return res.status(200).json(new ApiResponse(200, "Dedup stats", stats));
 });
 
-export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler, getDedupStatsHandler };
+const getEncryptionStatusHandler = asyncHandler(async (req, res) => {
+  const status = await getEncryptionStatus(req.user._id);
+  return res.status(200).json(new ApiResponse(200, "Encryption status", status));
+});
+
+export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler, getDedupStatsHandler, getEncryptionStatusHandler };

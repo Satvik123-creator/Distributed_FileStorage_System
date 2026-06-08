@@ -154,6 +154,9 @@ const downloadFile = async (fileId, userId) => {
     mimeType: file.mimeType,
     fileSize: file.fileSize,
     version: file.version,
+    encrypted: file.encrypted || false,
+    encryptionIv: file.encryptionIv || null,
+    encryptionVersion: file.encryptionVersion || null,
   };
 
   // Try primary first

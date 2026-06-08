@@ -43,6 +43,11 @@ const getDedupStats = async () => {
   return response.data?.data || {};
 };
 
+const getEncryptionStatus = async () => {
+  const response = await api.get("/storage/encryption/status");
+  return response.data?.data || {};
+};
+
 export default {
   getStorageHealth,
   getStorageStats,
@@ -50,4 +55,5 @@ export default {
   getFailoverLogs,
   getFailoverStats,
   getDedupStats,
+  getEncryptionStatus,
 };
