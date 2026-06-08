@@ -14,7 +14,7 @@ const EncryptionWidget = React.memo(({ encryptionStatus }) => {
     encryptionRate = 0,
   } = encryptionStatus || {};
 
-  const label = algorithm.toUpperCase().replace(/-/g, "-");
+  const label = (algorithm || "aes-256-gcm").toUpperCase().replace(/-/g, "-");
 
   return (
     <section className="dashboard-panel encryption-widget">
