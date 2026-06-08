@@ -19,6 +19,7 @@ const activityLogSchema = new mongoose.Schema(
         "REPLICATION",
         "RECOVERY",
         "REPAIR",
+        "VERSION_CREATE",
       ],
     },
     fileId: {

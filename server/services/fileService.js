@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import File from "../models/File.js";
 import fs from "fs/promises";
 import path from "path";
@@ -7,14 +8,42 @@ import { getFilePath } from "./storageService.js";
 import * as activityService from "./activityService.js";
 
 const createFileMetadata = async (payload) => {
-  const file = await File.create(payload);
+  const { ownerId, originalName } = payload;
+
+  const existingFile = await File.findOne({
+    ownerId,
+    originalName,
+    isDeleted: false,
+    parentFileId: null,
+  }).sort({ version: -1 });
+
+  let version = 1;
+  let parentFileId = null;
+  let fileGroupId = new mongoose.Types.ObjectId();
+
+  if (existingFile) {
+    fileGroupId = existingFile.fileGroupId;
+    const latestVersion = await File.findOne({ fileGroupId, isDeleted: false }).sort({ version: -1 });
+    version = (latestVersion ? latestVersion.version : 0) + 1;
+    parentFileId = existingFile._id;
+  }
+
+  const file = await File.create({
+    ...payload,
+    version,
+    parentFileId,
+    fileGroupId,
+  });
+
   return file;
 };
 
 const getUserFiles = async (userId) => {
-  const files = await File.find({ ownerId: userId, isDeleted: false }).sort({
-    uploadedAt: -1,
-  });
+  const files = await File.find({
+    ownerId: userId,
+    isDeleted: false,
+    parentFileId: null,
+  }).sort({ uploadedAt: -1 });
   return files;
 };
 
@@ -23,7 +52,26 @@ const getFileById = async (id) => {
   return file;
 };
 
-export { createFileMetadata, getUserFiles, getFileById };
+const getFileVersions = async (fileId, userId) => {
+  const file = await File.findById(fileId);
+  if (!file || file.isDeleted) {
+    throw new ApiError(404, "File not found");
+  }
+  if (file.ownerId.toString() !== userId.toString()) {
+    throw new ApiError(403, "Access denied");
+  }
+
+  const groupId = file.fileGroupId || file._id;
+  const versions = await File.find({
+    fileGroupId: groupId,
+    ownerId: userId,
+    isDeleted: false,
+  }).sort({ version: 1 });
+
+  return versions;
+};
+
+export { createFileMetadata, getUserFiles, getFileById, getFileVersions };
 
 const searchFiles = async (userId, { name, mimeType, startDate, endDate }) => {
   const query = { ownerId: userId, isDeleted: false };
@@ -88,16 +136,20 @@ const downloadFile = async (fileId, userId) => {
     ? getFilePath(replicaNode, file.ownerId.toString(), file.storedName)
     : null;
 
+  const result = {
+    filePath: null,
+    originalName: file.originalName,
+    mimeType: file.mimeType,
+    fileSize: file.fileSize,
+    version: file.version,
+  };
+
   // Try primary first
   if (primaryPath) {
     try {
       await fs.access(primaryPath);
-      return {
-        filePath: primaryPath,
-        originalName: file.originalName,
-        mimeType: file.mimeType,
-        fileSize: file.fileSize,
-      };
+      result.filePath = primaryPath;
+      return result;
     } catch (err) {
       // primary missing; fall through to try replica
       console.warn(`Primary missing for file ${fileId} at ${primaryPath}: ${err.message}`);
@@ -108,19 +160,14 @@ const downloadFile = async (fileId, userId) => {
   if (replicaPath) {
     try {
       await fs.access(replicaPath);
+      result.filePath = replicaPath;
       // Log that replica was used for download
       try {
         await activityService.createActivity({ userId, action: "RECOVERY", fileId: file._id, fileName: file.originalName });
       } catch (e) {
         console.warn("Failed to log recovery activity", e);
       }
-
-      return {
-        filePath: replicaPath,
-        originalName: file.originalName,
-        mimeType: file.mimeType,
-        fileSize: file.fileSize,
-      };
+      return result;
     } catch (err) {
       console.warn(`Replica missing for file ${fileId} at ${replicaPath}: ${err.message}`);
     }

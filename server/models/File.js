@@ -46,6 +46,20 @@ const fileSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    version: {
+      type: Number,
+      default: 1,
+    },
+    parentFileId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "File",
+      default: null,
+    },
+    fileGroupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+      index: true,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

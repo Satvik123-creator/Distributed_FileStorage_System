@@ -13,6 +13,7 @@ const FileCard = ({
   file,
   onDownload,
   onDelete,
+  onShowVersions,
   downloading,
   downloadProgress,
   deleting,
@@ -55,6 +56,14 @@ const FileCard = ({
           {isDownloading
             ? `Downloading${downloadProgress ? ` ${downloadProgress}%` : "..."}`
             : "Download"}
+        </button>
+        <button
+          type="button"
+          className="file-action-button file-action-secondary"
+          onClick={() => onShowVersions(file)}
+          disabled={isDownloading || isDeleting}
+        >
+          Versions
         </button>
         <button
           type="button"

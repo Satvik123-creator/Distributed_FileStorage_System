@@ -11,6 +11,7 @@ import {
 } from "../services/storageService.js";
 import { updateNodeStats } from "../services/loadBalancerService.js";
 import fs from "fs/promises";
+import path from "path";
 
 const getMyFiles = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -22,6 +23,8 @@ const getMyFiles = asyncHandler(async (req, res) => {
     mimeType: f.mimeType,
     nodeLocation: f.nodeLocation,
     uploadedAt: f.uploadedAt,
+    version: f.version,
+    fileGroupId: f.fileGroupId,
   }));
 
   return res
@@ -93,8 +96,11 @@ const uploadFile = asyncHandler(async (req, res) => {
     await updateNodeStats(primaryNode);
     await updateNodeStats(replicaNode);
 
+    const isVersion = file.version > 1;
+    const logActionName = isVersion ? "VERSION_CREATE" : "UPLOAD";
+
     // Log upload activity (do not block response)
-    logAction(req.user._id, "UPLOAD", {
+    logAction(req.user._id, logActionName, {
       fileId: file._id,
       fileName: file.originalName,
     }).catch(() => {});
@@ -104,6 +110,9 @@ const uploadFile = asyncHandler(async (req, res) => {
         fileId: file._id,
         primaryNode,
         replicaNode,
+        version: file.version,
+        fileGroupId: file.fileGroupId,
+        isVersion,
       }),
     );
   } catch (error) {
@@ -119,17 +128,42 @@ const downloadFile = asyncHandler(async (req, res) => {
   const { fileId } = req.params;
   const userId = req.user._id.toString();
 
-  const { filePath, originalName, mimeType } = await fileService.downloadFile(
+  const { filePath, originalName, mimeType, version } = await fileService.downloadFile(
     fileId,
     userId,
   );
 
+  const ext = path.extname(originalName);
+  const base = path.basename(originalName, ext);
+  const displayName = version > 1 ? `${base}_v${version}${ext}` : originalName;
+
   res.setHeader("Content-Type", mimeType || "application/octet-stream");
-  return res.download(filePath, originalName, (err) => {
+  return res.download(filePath, displayName, (err) => {
     if (err) {
       throw new ApiError(500, "Failed to download file");
     }
   });
+});
+
+const getFileVersions = asyncHandler(async (req, res) => {
+  const { fileId } = req.params;
+  const userId = req.user._id.toString();
+
+  const versions = await fileService.getFileVersions(fileId, userId);
+  const mapped = versions.map((v) => ({
+    fileId: v._id,
+    originalName: v.originalName,
+    fileSize: v.fileSize,
+    mimeType: v.mimeType,
+    nodeLocation: v.nodeLocation,
+    uploadedAt: v.uploadedAt,
+    version: v.version,
+    parentFileId: v.parentFileId,
+  }));
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "File versions fetched", { versions: mapped }));
 });
 
 const deleteFile = asyncHandler(async (req, res) => {
@@ -175,6 +209,8 @@ const searchFiles = asyncHandler(async (req, res) => {
     mimeType: f.mimeType,
     nodeLocation: f.nodeLocation,
     uploadedAt: f.uploadedAt,
+    version: f.version,
+    fileGroupId: f.fileGroupId,
   }));
 
   return res
@@ -182,4 +218,4 @@ const searchFiles = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Search results", mapped));
 });
 
-export { getMyFiles, getFile, uploadFile, downloadFile, deleteFile, searchFiles };
+export { getMyFiles, getFile, uploadFile, downloadFile, deleteFile, searchFiles, getFileVersions };

@@ -30,6 +30,10 @@ const UploadSuccessModal = ({
             <strong>{uploadData.fileName}</strong>
           </div>
           <div>
+            <span>Version</span>
+            <strong>v{uploadData.version || 1}</strong>
+          </div>
+          <div>
             <span>Upload Time</span>
             <strong>{uploadData.uploadTime}</strong>
           </div>

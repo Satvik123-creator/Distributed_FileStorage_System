@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fileService from "../services/fileService.js";
 import FileCard from "../components/FileCard.jsx";
 import FileTable from "../components/FileTable.jsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
+import VersionHistoryModal from "../components/VersionHistoryModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { APP_PATHS } from "../routes/appRoutes.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -40,6 +41,9 @@ const MyFiles = () => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState(null);
   const [modalFile, setModalFile] = useState(null);
+  const [versionsModal, setVersionsModal] = useState({ open: false, file: null, versions: [] });
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [versionDeletingId, setVersionDeletingId] = useState(null);
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -97,6 +101,69 @@ const MyFiles = () => {
     } finally {
       setDownloadingId(null);
       setDownloadProgress(0);
+    }
+  };
+
+  const handleShowVersions = useCallback(async (file) => {
+    setVersionsLoading(true);
+    try {
+      const versions = await fileService.getFileVersions(file.fileId);
+      setVersionsModal({ open: true, file, versions });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load versions");
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        logout();
+        navigate(APP_PATHS.login, { replace: true });
+      }
+    } finally {
+      setVersionsLoading(false);
+    }
+  }, [logout, navigate]);
+
+  const handleCloseVersions = () => {
+    setVersionsModal({ open: false, file: null, versions: [] });
+  };
+
+  const handleVersionDownload = async (versionFile) => {
+    setDownloadingId(versionFile.fileId);
+    setDownloadProgress(0);
+    try {
+      const blob = await fileService.downloadFile(versionFile.fileId, (event) => {
+        if (event.total) {
+          setDownloadProgress(Math.round((event.loaded * 100) / event.total));
+        }
+      });
+      const ext = versionFile.originalName.substring(versionFile.originalName.lastIndexOf("."));
+      const base = versionFile.originalName.substring(0, versionFile.originalName.lastIndexOf("."));
+      const displayName = versionFile.version > 1 ? `${base}_v${versionFile.version}${ext}` : versionFile.originalName;
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = displayName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to download version");
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress(0);
+    }
+  };
+
+  const handleVersionDelete = async (versionFile) => {
+    setVersionDeletingId(versionFile.fileId);
+    try {
+      await fileService.deleteFile(versionFile.fileId);
+      setVersionsModal((prev) => ({
+        ...prev,
+        versions: prev.versions.filter((v) => v.fileId !== versionFile.fileId),
+      }));
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete version");
+    } finally {
+      setVersionDeletingId(null);
     }
   };
 
@@ -158,6 +225,7 @@ const MyFiles = () => {
               files={files}
               onDownload={handleDownload}
               onDelete={handleOpenDeleteModal}
+              onShowVersions={handleShowVersions}
               downloading={downloadingId}
               downloadProgress={downloadProgress}
               deleting={deletingId}
@@ -172,6 +240,7 @@ const MyFiles = () => {
                   file={file}
                   onDownload={handleDownload}
                   onDelete={handleOpenDeleteModal}
+                  onShowVersions={handleShowVersions}
                   downloading={downloadingId}
                   downloadProgress={downloadProgress}
                   deleting={deletingId}
@@ -181,6 +250,17 @@ const MyFiles = () => {
           </div>
         </>
       )}
+
+      <VersionHistoryModal
+        isOpen={versionsModal.open}
+        versions={versionsModal.versions}
+        fileName={versionsModal.file?.originalName || ""}
+        onClose={handleCloseVersions}
+        onDownload={handleVersionDownload}
+        onDeleteVersion={handleVersionDelete}
+        downloading={downloadingId}
+        deleting={versionDeletingId}
+      />
 
       <DeleteConfirmationModal
         isOpen={Boolean(modalFile)}

@@ -61,10 +61,16 @@ const uploadFile = async (file, onUploadProgress) => {
   return response.data?.data || response.data;
 };
 
+const getFileVersions = async (fileId) => {
+  const response = await api.get(`/files/versions/${fileId}`);
+  return response.data?.data?.versions || [];
+};
+
 export default {
   getMyFiles,
   downloadFile,
   deleteFile,
   searchFiles,
   uploadFile,
+  getFileVersions,
 };
