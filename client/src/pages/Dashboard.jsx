@@ -57,19 +57,21 @@ const Dashboard = () => {
   const [selectedNode, setSelectedNode] = useState(null);
   const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
   const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
+  const [dedupStats, setDedupStats] = useState({ totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData, dedupStatsData] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
         storageService.getStorageStats(),
         storageService.getFailoverStats(),
         authService.getStorageInfo(),
+        storageService.getDedupStats(),
       ]);
 
       setFiles(fileList);
@@ -77,6 +79,7 @@ const Dashboard = () => {
       setHealth(storageHealth || {});
       setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
       setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
+      setDedupStats(dedupStatsData || { totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
       // Merge stats into health for richer node display
       if (storageStats) {
         const mergedHealth = { ...storageHealth };
@@ -118,6 +121,9 @@ const Dashboard = () => {
 
   const stats = useMemo(() => {
     const totalFiles = files.length;
+    const dedupSavings = dedupStats.savingsBytes > 0
+      ? `${formatBytes(dedupStats.savingsBytes)} (${dedupStats.savingsPercent}%)`
+      : "0 B";
     const totalDownloads = activities.filter(
       (activity) => String(activity.action).toUpperCase() === "DOWNLOAD",
     ).length;
@@ -172,6 +178,12 @@ const Dashboard = () => {
         tone: "slate",
       },
       {
+        label: "Dedup Savings",
+        value: dedupSavings,
+        detail: `Across ${dedupStats.totalLogicalFiles} logical / ${dedupStats.totalPhysicalFiles} physical files`,
+        tone: "teal",
+      },
+      {
         label: "Total Failovers",
         value: failoverStats.totalFailovers,
         detail: "Automatic failover events",
@@ -184,7 +196,7 @@ const Dashboard = () => {
         tone: "rose",
       },
     ];
-  }, [activities, files, health, totalStorageUsed, failoverStats]);
+  }, [activities, files, health, totalStorageUsed, failoverStats, dedupStats]);
 
   const latestFiles = useMemo(
     () =>

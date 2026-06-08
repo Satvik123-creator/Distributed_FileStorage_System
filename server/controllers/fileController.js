@@ -12,6 +12,7 @@ import {
 import { updateNodeStats } from "../services/loadBalancerService.js";
 import { checkQuota, updateStorageUsed } from "../services/quotaService.js";
 import { checkShareAccess } from "../services/shareService.js";
+import { calculateHash, findExistingByHash, createDedupReference } from "../services/dedupService.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -66,13 +67,55 @@ const uploadFile = asyncHandler(async (req, res) => {
   // Check storage quota before proceeding
   await checkQuota(userId, req.file.size);
 
+  const fileHash = calculateHash(req.file.buffer);
+  const existingFile = await findExistingByHash(fileHash);
+
+  // Compute version info (file name based) before deciding dedup path
+  const versionInfo = await fileService.computeVersionInfo(
+    req.user._id,
+    req.file.originalname,
+  );
+
+  if (existingFile) {
+    // Dedup: no physical copy needed
+    const file = await createDedupReference({
+      sourceFile: existingFile,
+      ownerId: req.user._id,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      version: versionInfo.version,
+      parentFileId: versionInfo.parentFileId,
+      fileGroupId: versionInfo.fileGroupId,
+    });
+
+    await updateStorageUsed(req.user._id);
+
+    const logActionName = file.version > 1 ? "VERSION_CREATE" : "UPLOAD";
+    logAction(req.user._id, logActionName, {
+      fileId: file._id,
+      fileName: file.originalName,
+    }).catch(() => {});
+
+    return res.status(201).json(
+      new ApiResponse(201, "File uploaded successfully (deduplicated)", {
+        fileId: file._id,
+        primaryNode: file.primaryNode,
+        replicaNode: file.replicaNode,
+        version: file.version,
+        fileGroupId: file.fileGroupId,
+        isVersion: file.version > 1,
+        deduplicated: true,
+      }),
+    );
+  }
+
+  // No existing hash — store physical copy
   const primaryNode = await chooseNode();
   const storedName = generateUniqueFileName(req.file.originalname);
 
   let savedPath;
 
   try {
-    // store primary copy
     savedPath = await storeFile({
       buffer: req.file.buffer,
       nodeLocation: primaryNode,
@@ -80,7 +123,6 @@ const uploadFile = asyncHandler(async (req, res) => {
       storedName,
     });
 
-    // create replica on a different node
     const { replicaNode } = await replicationService.createReplica({
       buffer: req.file.buffer,
       primaryNode,
@@ -99,19 +141,15 @@ const uploadFile = asyncHandler(async (req, res) => {
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       uploadedAt: new Date(),
+      fileHash,
+      referenceCount: 1,
     });
 
-    // Update node statistics after upload
     await updateNodeStats(primaryNode);
     await updateNodeStats(replicaNode);
-
-    // Recalculate user storage used
     await updateStorageUsed(req.user._id);
 
-    const isVersion = file.version > 1;
-    const logActionName = isVersion ? "VERSION_CREATE" : "UPLOAD";
-
-    // Log upload activity (do not block response)
+    const logActionName = file.version > 1 ? "VERSION_CREATE" : "UPLOAD";
     logAction(req.user._id, logActionName, {
       fileId: file._id,
       fileName: file.originalName,
@@ -124,7 +162,8 @@ const uploadFile = asyncHandler(async (req, res) => {
         replicaNode,
         version: file.version,
         fileGroupId: file.fileGroupId,
-        isVersion,
+        isVersion: file.version > 1,
+        deduplicated: false,
       }),
     );
   } catch (error) {

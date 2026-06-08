@@ -8,10 +8,9 @@ import { getFilePath } from "./storageService.js";
 import * as activityService from "./activityService.js";
 import { performFailover } from "./failoverService.js";
 import { checkShareAccess } from "./shareService.js";
+import { decrementReference } from "./dedupService.js";
 
-const createFileMetadata = async (payload) => {
-  const { ownerId, originalName } = payload;
-
+const computeVersionInfo = async (ownerId, originalName) => {
   const existingFile = await File.findOne({
     ownerId,
     originalName,
@@ -30,11 +29,19 @@ const createFileMetadata = async (payload) => {
     parentFileId = existingFile._id;
   }
 
+  return { version, parentFileId, fileGroupId };
+};
+
+const createFileMetadata = async (payload) => {
+  const { ownerId, originalName } = payload;
+
+  const versionInfo = await computeVersionInfo(ownerId, originalName);
+
   const file = await File.create({
     ...payload,
-    version,
-    parentFileId,
-    fileGroupId,
+    version: versionInfo.version,
+    parentFileId: versionInfo.parentFileId,
+    fileGroupId: versionInfo.fileGroupId,
   });
 
   return file;
@@ -73,7 +80,7 @@ const getFileVersions = async (fileId, userId) => {
   return versions;
 };
 
-export { createFileMetadata, getUserFiles, getFileById, getFileVersions };
+export { createFileMetadata, computeVersionInfo, getUserFiles, getFileById, getFileVersions };
 
 const searchFiles = async (userId, { name, mimeType, startDate, endDate }) => {
   const query = { ownerId: userId, isDeleted: false };
@@ -196,38 +203,26 @@ const deleteFile = async (fileId, userId) => {
     throw new ApiError(403, "Access denied");
   }
 
-  const filePath = getFilePath(file.nodeLocation, file.ownerId.toString(), file.storedName);
-  // Attempt to delete both primary and replica copies
-  const primaryNode = file.primaryNode || file.nodeLocation;
-  const replicaNode = file.replicaNode;
+  // Handle dedup reference: decrement source reference count
+  const { physicalDeleted, sourceFile } = await decrementReference(file);
 
-  const primaryPath = getFilePath(primaryNode, file.ownerId.toString(), file.storedName);
-  const replicaPath = replicaNode
-    ? getFilePath(replicaNode, file.ownerId.toString(), file.storedName)
-    : null;
+  if (physicalDeleted && sourceFile) {
+    // This was the last reference — delete physical files
+    const primaryNode = sourceFile.primaryNode || sourceFile.nodeLocation;
+    const replicaNode = sourceFile.replicaNode;
 
-  const primaryResult = await fs.unlink(primaryPath).then(() => ({ deleted: true })).catch((e) => ({ error: e }));
-  let replicaResult = null;
-  if (replicaPath) {
-    replicaResult = await fs.unlink(replicaPath).then(() => ({ deleted: true })).catch((e) => ({ error: e }));
+    const primaryPath = getFilePath(primaryNode, sourceFile.ownerId.toString(), sourceFile.storedName);
+    const replicaPath = replicaNode
+      ? getFilePath(replicaNode, sourceFile.ownerId.toString(), sourceFile.storedName)
+      : null;
+
+    await fs.unlink(primaryPath).catch(() => {});
+    if (replicaPath) {
+      await fs.unlink(replicaPath).catch(() => {});
+    }
   }
 
-  const primaryErr = primaryResult.error;
-  const replicaErr = replicaResult && replicaResult.error;
-
-  // If both missing or both failed with ENOENT, treat as missing
-  const primaryMissing = primaryErr && primaryErr.code === "ENOENT";
-  const replicaMissing = replicaErr && replicaErr.code === "ENOENT";
-
-  if ((primaryMissing || primaryErr) && (replicaMissing || replicaErr)) {
-    throw new ApiError(404, "Physical file missing");
-  }
-
-  // If deletion for one node failed with other error, surface server error
-  if ((primaryErr && primaryErr.code !== "ENOENT") || (replicaErr && replicaErr.code !== "ENOENT")) {
-    throw new ApiError(500, "Failed to delete physical file");
-  }
-
+  // Mark this file as deleted
   file.isDeleted = true;
   file.deletedAt = new Date();
   await file.save();

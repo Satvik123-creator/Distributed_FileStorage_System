@@ -38,10 +38,16 @@ const getFailoverStats = async () => {
   return response.data?.data || {};
 };
 
+const getDedupStats = async () => {
+  const response = await api.get("/storage/dedup-stats");
+  return response.data?.data || {};
+};
+
 export default {
   getStorageHealth,
   getStorageStats,
   repairFile,
   getFailoverLogs,
   getFailoverStats,
+  getDedupStats,
 };

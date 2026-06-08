@@ -69,6 +69,25 @@ const fileSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    fileHash: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    referenceCount: {
+      type: Number,
+      default: 1,
+      min: 0,
+    },
+    isDedupReference: {
+      type: Boolean,
+      default: false,
+    },
+    dedupSourceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "File",
+      default: null,
+    },
   },
   {
     versionKey: false,

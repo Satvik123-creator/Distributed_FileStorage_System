@@ -66,4 +66,11 @@ const getFailoverStatsHandler = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Failover stats", stats));
 });
 
-export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler };
+import { getDedupStats } from "../services/dedupService.js";
+
+const getDedupStatsHandler = asyncHandler(async (req, res) => {
+  const stats = await getDedupStats(req.user._id);
+  return res.status(200).json(new ApiResponse(200, "Dedup stats", stats));
+});
+
+export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler, getDedupStatsHandler };
