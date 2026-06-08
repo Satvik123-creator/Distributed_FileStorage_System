@@ -5,7 +5,9 @@ import FileCard from "../components/FileCard.jsx";
 import FileTable from "../components/FileTable.jsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.jsx";
 import VersionHistoryModal from "../components/VersionHistoryModal.jsx";
+import ShareModal from "../components/ShareModal.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import shareService from "../services/shareService.js";
 import { APP_PATHS } from "../routes/appRoutes.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -44,6 +46,8 @@ const MyFiles = () => {
   const [versionsModal, setVersionsModal] = useState({ open: false, file: null, versions: [] });
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versionDeletingId, setVersionDeletingId] = useState(null);
+  const [shareModal, setShareModal] = useState({ open: false, file: null });
+  const [sharing, setSharing] = useState(false);
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -170,6 +174,23 @@ const MyFiles = () => {
   const handleOpenDeleteModal = (file) => setModalFile(file);
   const handleCloseDeleteModal = () => setModalFile(null);
 
+  const handleOpenShareModal = (file) => {
+    setShareModal({ open: true, file });
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModal({ open: false, file: null });
+  };
+
+  const handleShare = async (fileId, email, permissions) => {
+    setSharing(true);
+    try {
+      await shareService.shareFile(fileId, email, permissions);
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const handleConfirmDelete = async (file) => {
     setDeletingId(file.fileId);
     setError("");
@@ -226,6 +247,7 @@ const MyFiles = () => {
               onDownload={handleDownload}
               onDelete={handleOpenDeleteModal}
               onShowVersions={handleShowVersions}
+              onShare={handleOpenShareModal}
               downloading={downloadingId}
               downloadProgress={downloadProgress}
               deleting={deletingId}
@@ -241,6 +263,7 @@ const MyFiles = () => {
                   onDownload={handleDownload}
                   onDelete={handleOpenDeleteModal}
                   onShowVersions={handleShowVersions}
+                  onShare={handleOpenShareModal}
                   downloading={downloadingId}
                   downloadProgress={downloadProgress}
                   deleting={deletingId}
@@ -260,6 +283,14 @@ const MyFiles = () => {
         onDeleteVersion={handleVersionDelete}
         downloading={downloadingId}
         deleting={versionDeletingId}
+      />
+
+      <ShareModal
+        isOpen={shareModal.open}
+        file={shareModal.file}
+        onClose={handleCloseShareModal}
+        onShare={handleShare}
+        loading={sharing}
       />
 
       <DeleteConfirmationModal

@@ -1783,3 +1783,35 @@ input {
   color: #b53a3a;
   border: 1px solid rgba(224, 73, 73, 0.2);
 }
+
+/* Share Modal */
+.share-modal {
+  max-width: 480px;
+}
+
+.share-modal .form-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.share-modal .field-error {
+  color: #e04949;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Shared Files Page */
+.shared-files-page .files-shared-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.shared-files-page .file-card .file-meta-grid {
+  grid-template-columns: repeat(2, 1fr);
+}

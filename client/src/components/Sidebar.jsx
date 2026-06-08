@@ -8,6 +8,7 @@ const navItems = [
   { label: "Upload File", to: APP_PATHS.uploadFile },
   { label: "Search Files", to: APP_PATHS.searchFiles },
   { label: "Activity Logs", to: APP_PATHS.activityLogs },
+  { label: "Shared Files", to: APP_PATHS.sharedFiles },
   { label: "Storage Health", to: APP_PATHS.storageHealth },
 ];
 

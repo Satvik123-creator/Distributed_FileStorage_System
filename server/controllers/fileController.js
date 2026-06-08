@@ -11,6 +11,7 @@ import {
 } from "../services/storageService.js";
 import { updateNodeStats } from "../services/loadBalancerService.js";
 import { checkQuota, updateStorageUsed } from "../services/quotaService.js";
+import { checkShareAccess } from "../services/shareService.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -44,7 +45,10 @@ const getFile = asyncHandler(async (req, res) => {
   }
 
   if (file.ownerId.toString() !== userId.toString()) {
-    throw new ApiError(403, "Access denied");
+    const hasAccess = await checkShareAccess(id, userId, "view");
+    if (!hasAccess) {
+      throw new ApiError(403, "Access denied");
+    }
   }
 
   return res

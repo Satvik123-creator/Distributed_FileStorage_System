@@ -14,6 +14,7 @@ const FileCard = ({
   onDownload,
   onDelete,
   onShowVersions,
+  onShare,
   downloading,
   downloadProgress,
   deleting,
@@ -64,6 +65,14 @@ const FileCard = ({
           disabled={isDownloading || isDeleting}
         >
           Versions
+        </button>
+        <button
+          type="button"
+          className="file-action-button file-action-secondary"
+          onClick={() => onShare(file)}
+          disabled={isDownloading || isDeleting}
+        >
+          Share
         </button>
         <button
           type="button"

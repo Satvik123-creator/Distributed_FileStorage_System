@@ -14,6 +14,7 @@ const FileTable = ({
   onDownload,
   onDelete,
   onShowVersions,
+  onShare,
   downloading,
   downloadProgress,
   deleting,
@@ -67,6 +68,14 @@ const FileTable = ({
                       disabled={isDownloading || isDeleting}
                     >
                       Versions
+                    </button>
+                    <button
+                      type="button"
+                      className="file-action-button file-action-secondary"
+                      onClick={() => onShare(file)}
+                      disabled={isDownloading || isDeleting}
+                    >
+                      Share
                     </button>
                     <button
                       type="button"

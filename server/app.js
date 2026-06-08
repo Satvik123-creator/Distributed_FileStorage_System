@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import storageRoutes from "./routes/storageRoutes.js";
+import shareRoutes from "./routes/shareRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/storage", storageRoutes);
+app.use("/api/share", shareRoutes);
 
 app.use(errorHandler);
 

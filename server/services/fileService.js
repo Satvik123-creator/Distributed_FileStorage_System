@@ -7,6 +7,7 @@ import ApiError from "../utils/ApiError.js";
 import { getFilePath } from "./storageService.js";
 import * as activityService from "./activityService.js";
 import { performFailover } from "./failoverService.js";
+import { checkShareAccess } from "./shareService.js";
 
 const createFileMetadata = async (payload) => {
   const { ownerId, originalName } = payload;
@@ -126,7 +127,10 @@ const downloadFile = async (fileId, userId) => {
   }
 
   if (file.ownerId.toString() !== userId.toString()) {
-    throw new ApiError(403, "Access denied");
+    const hasAccess = await checkShareAccess(fileId, userId, "download");
+    if (!hasAccess) {
+      throw new ApiError(403, "Access denied");
+    }
   }
 
   const primaryNode = file.primaryNode || file.nodeLocation;
