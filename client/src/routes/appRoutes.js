@@ -8,4 +8,5 @@ export const APP_PATHS = {
   activityLogs: "/dashboard/activity-logs",
   storageHealth: "/storage-health",
   sharedFiles: "/shared-with-me",
+  storageAnalytics: "/storage-analytics",
 };

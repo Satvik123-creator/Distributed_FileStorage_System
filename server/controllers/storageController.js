@@ -68,6 +68,7 @@ const getFailoverStatsHandler = asyncHandler(async (req, res) => {
 
 import { getDedupStats } from "../services/dedupService.js";
 import { getEncryptionStatus } from "../services/encryptionService.js";
+import StorageGrowth from "../models/StorageGrowth.js";
 
 const getDedupStatsHandler = asyncHandler(async (req, res) => {
   const stats = await getDedupStats(req.user._id);
@@ -79,4 +80,45 @@ const getEncryptionStatusHandler = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Encryption status", status));
 });
 
-export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler, getDedupStatsHandler, getEncryptionStatusHandler };
+const getGrowthData = asyncHandler(async (req, res) => {
+  const days = parseInt(req.query.days, 10) || 30;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  let records = await StorageGrowth.find({ date: { $gte: since } })
+    .sort({ date: 1 })
+    .lean();
+
+  if (records.length === 0) {
+    const nodeStats = await getAllNodeStats();
+    const snapshots = [];
+    for (const [nodeName, stats] of Object.entries(nodeStats)) {
+      snapshots.push({
+        nodeName,
+        date: new Date(),
+        totalFiles: stats.totalFiles,
+        storageUsed: stats.storageUsed,
+      });
+    }
+    await StorageGrowth.insertMany(snapshots);
+    records = snapshots;
+  }
+
+  return res.status(200).json(new ApiResponse(200, "Growth data", records));
+});
+
+const recordSnapshot = asyncHandler(async (req, res) => {
+  const nodeStats = await getAllNodeStats();
+  const snapshots = [];
+  for (const [nodeName, stats] of Object.entries(nodeStats)) {
+    snapshots.push({
+      nodeName,
+      date: new Date(),
+      totalFiles: stats.totalFiles,
+      storageUsed: stats.storageUsed,
+    });
+  }
+  await StorageGrowth.insertMany(snapshots);
+  return res.status(200).json(new ApiResponse(200, "Snapshot recorded", snapshots));
+});
+
+export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler, getDedupStatsHandler, getEncryptionStatusHandler, getGrowthData, recordSnapshot };

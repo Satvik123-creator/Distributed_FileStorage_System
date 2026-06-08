@@ -80,7 +80,61 @@ const getFileVersions = async (fileId, userId) => {
   return versions;
 };
 
-export { createFileMetadata, computeVersionInfo, getUserFiles, getFileById, getFileVersions };
+const restoreVersion = async (versionId, userId) => {
+  const versionFile = await File.findById(versionId);
+  if (!versionFile || versionFile.isDeleted) {
+    throw new ApiError(404, "Version not found");
+  }
+  if (versionFile.ownerId.toString() !== userId.toString()) {
+    throw new ApiError(403, "Access denied");
+  }
+
+  const { version, parentFileId, fileGroupId } = await computeVersionInfo(userId, versionFile.originalName);
+
+  const newStoredName = `${Date.now()}_${versionId}`;
+  const srcPath = getFilePath(versionFile.nodeLocation, versionFile.ownerId.toString(), versionFile.storedName);
+  const dstPath = getFilePath(versionFile.nodeLocation, versionFile.ownerId.toString(), newStoredName);
+
+  await fs.copyFile(srcPath, dstPath);
+
+  const buffer = await fs.readFile(dstPath);
+  const { createReplica } = await import("./replicationService.js");
+  const { replicaNode } = await createReplica({
+    buffer,
+    primaryNode: versionFile.nodeLocation,
+    userId: userId.toString(),
+    storedName: newStoredName,
+    originalName: versionFile.originalName,
+  });
+
+  const newFile = await File.create({
+    ownerId: userId,
+    originalName: versionFile.originalName,
+    storedName: newStoredName,
+    nodeLocation: versionFile.nodeLocation,
+    primaryNode: versionFile.nodeLocation,
+    replicaNode,
+    fileSize: versionFile.fileSize,
+    mimeType: versionFile.mimeType,
+    uploadedAt: new Date(),
+    version,
+    parentFileId,
+    fileGroupId,
+    fileHash: versionFile.fileHash,
+    referenceCount: 1,
+    encrypted: versionFile.encrypted,
+    encryptionVersion: versionFile.encryptionVersion,
+    encryptionIv: versionFile.encryptionIv,
+  });
+
+  const { updateNodeStats } = await import("./loadBalancerService.js");
+  await updateNodeStats(versionFile.nodeLocation).catch(() => {});
+  if (replicaNode) await updateNodeStats(replicaNode).catch(() => {});
+
+  return newFile;
+};
+
+export { createFileMetadata, computeVersionInfo, getUserFiles, getFileById, getFileVersions, restoreVersion };
 
 const searchFiles = async (userId, { name, mimeType, startDate, endDate }) => {
   const query = { ownerId: userId, isDeleted: false };

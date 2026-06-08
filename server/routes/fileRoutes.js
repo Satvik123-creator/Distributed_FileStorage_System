@@ -7,6 +7,7 @@ import {
   deleteFile,
   searchFiles,
   getFileVersions,
+  restoreVersion,
 } from "../controllers/fileController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -18,6 +19,7 @@ router.get("/my-files", authMiddleware, getMyFiles);
 router.get("/search", authMiddleware, searchFiles);
 router.get("/download/:fileId", authMiddleware, downloadFile);
 router.get("/versions/:fileId", authMiddleware, getFileVersions);
+router.post("/versions/restore/:versionId", authMiddleware, restoreVersion);
 router.delete("/:fileId", authMiddleware, deleteFile);
 router.get("/:id", authMiddleware, getFile);
 

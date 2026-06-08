@@ -23,6 +23,9 @@ const activityLabel = (action) => {
   if (normalized === "REPLICATION") return "Replicated";
   if (normalized === "RECOVERY") return "Recovered";
   if (normalized === "REPAIR") return "Repaired";
+  if (normalized === "SHARE" || normalized === "VERSION_CREATE") return "Shared";
+  if (normalized === "FAILOVER") return "Failover";
+  if (normalized === "RECOVERY") return "Recovered";
   return normalized || "Activity";
 };
 

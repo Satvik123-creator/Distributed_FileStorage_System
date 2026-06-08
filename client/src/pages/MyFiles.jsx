@@ -46,6 +46,7 @@ const MyFiles = () => {
   const [versionsModal, setVersionsModal] = useState({ open: false, file: null, versions: [] });
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versionDeletingId, setVersionDeletingId] = useState(null);
+  const [versionRestoringId, setVersionRestoringId] = useState(null);
   const [shareModal, setShareModal] = useState({ open: false, file: null });
   const [sharing, setSharing] = useState(false);
 
@@ -153,6 +154,25 @@ const MyFiles = () => {
     } finally {
       setDownloadingId(null);
       setDownloadProgress(0);
+    }
+  };
+
+  const handleVersionRestore = async (versionFile) => {
+    setVersionRestoringId(versionFile.fileId);
+    try {
+      const restored = await fileService.restoreVersion(versionFile.fileId);
+      setVersionsModal((prev) => ({
+        ...prev,
+        versions: [...prev.versions, restored].sort((a, b) => a.version - b.version),
+      }));
+      setFiles((prev) => {
+        const exists = prev.some((f) => f.fileId === restored.fileId);
+        return exists ? prev : [{ ...restored, nodeLocation: restored.nodeLocation || versionFile.nodeLocation }, ...prev];
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to restore version");
+    } finally {
+      setVersionRestoringId(null);
     }
   };
 
@@ -281,8 +301,10 @@ const MyFiles = () => {
         onClose={handleCloseVersions}
         onDownload={handleVersionDownload}
         onDeleteVersion={handleVersionDelete}
+        onRestoreVersion={handleVersionRestore}
         downloading={downloadingId}
         deleting={versionDeletingId}
+        restoring={versionRestoringId}
       />
 
       <ShareModal

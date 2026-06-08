@@ -66,6 +66,11 @@ const getFileVersions = async (fileId) => {
   return response.data?.data?.versions || [];
 };
 
+const restoreVersion = async (versionId) => {
+  const response = await api.post(`/files/versions/restore/${versionId}`);
+  return response.data?.data || response.data;
+};
+
 export default {
   getMyFiles,
   downloadFile,
@@ -73,4 +78,5 @@ export default {
   searchFiles,
   uploadFile,
   getFileVersions,
+  restoreVersion,
 };

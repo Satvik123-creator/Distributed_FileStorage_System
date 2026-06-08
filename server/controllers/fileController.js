@@ -294,4 +294,26 @@ const searchFiles = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Search results", mapped));
 });
 
-export { getMyFiles, getFile, uploadFile, downloadFile, deleteFile, searchFiles, getFileVersions };
+const restoreVersion = asyncHandler(async (req, res) => {
+  const { versionId } = req.params;
+  const userId = req.user._id;
+
+  const newFile = await fileService.restoreVersion(versionId, userId);
+
+  logAction(req.user._id, "VERSION_CREATE", {
+    fileId: newFile._id,
+    fileName: newFile.originalName,
+  }).catch(() => {});
+
+  return res.status(201).json(
+    new ApiResponse(201, "Version restored successfully", {
+      fileId: newFile._id,
+      originalName: newFile.originalName,
+      version: newFile.version,
+      fileSize: newFile.fileSize,
+      uploadedAt: newFile.uploadedAt,
+    }),
+  );
+});
+
+export { getMyFiles, getFile, uploadFile, downloadFile, deleteFile, searchFiles, getFileVersions, restoreVersion };

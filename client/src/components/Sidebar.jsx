@@ -10,6 +10,7 @@ const navItems = [
   { label: "Activity Logs", to: APP_PATHS.activityLogs },
   { label: "Shared Files", to: APP_PATHS.sharedFiles },
   { label: "Storage Health", to: APP_PATHS.storageHealth },
+  { label: "Storage Analytics", to: APP_PATHS.storageAnalytics },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {

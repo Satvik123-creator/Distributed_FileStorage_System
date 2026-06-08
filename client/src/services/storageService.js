@@ -48,6 +48,11 @@ const getEncryptionStatus = async () => {
   return response.data?.data || {};
 };
 
+const getGrowthData = async (days = 30) => {
+  const response = await api.get(`/storage/growth?days=${days}`);
+  return response.data?.data || [];
+};
+
 export default {
   getStorageHealth,
   getStorageStats,
@@ -56,4 +61,5 @@ export default {
   getFailoverStats,
   getDedupStats,
   getEncryptionStatus,
+  getGrowthData,
 };

@@ -11,6 +11,7 @@ import UploadFile from "./pages/UploadFile.jsx";
 import SearchFiles from "./pages/SearchFiles.jsx";
 import StorageHealth from "./pages/StorageHealth.jsx";
 import SharedFiles from "./pages/SharedFiles.jsx";
+import StorageAnalytics from "./pages/StorageAnalytics.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 const App = () => {
@@ -29,6 +30,7 @@ const App = () => {
               <Route path="/search" element={<SearchFiles />} />
               <Route path="/storage-health" element={<StorageHealth />} />
               <Route path="/shared-with-me" element={<SharedFiles />} />
+              <Route path="/storage-analytics" element={<StorageAnalytics />} />
               <Route path="/dashboard/upload-file" element={<UploadFile />} />
               <Route path="/dashboard/search-files" element={<SearchFiles />} />
               <Route path="/dashboard/activity-logs" element={<Dashboard />} />

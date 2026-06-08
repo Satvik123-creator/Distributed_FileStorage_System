@@ -399,6 +399,10 @@ input {
   border-top: 4px solid #e11d48;
 }
 
+.stats-card-teal {
+  border-top: 4px solid #0d9488;
+}
+
 .dashboard-real-page {
   gap: 18px;
 }
@@ -429,15 +433,15 @@ input {
 }
 
 .dashboard-panel:nth-of-type(3) {
-  grid-column: span 4;
+  grid-column: span 7;
 }
 
 .dashboard-panel:nth-of-type(4) {
-  grid-column: span 4;
+  grid-column: span 5;
 }
 
 .dashboard-panel:nth-of-type(5) {
-  grid-column: span 4;
+  grid-column: span 12;
 }
 
 .dashboard-table-wrap {
@@ -511,6 +515,43 @@ input {
   border-radius: 12px;
   background: var(--primary-soft);
   color: var(--primary);
+}
+
+.node-health-summary {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.summary-stat {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border-radius: 16px;
+  background: rgba(244, 247, 251, 0.82);
+  border: 1px solid var(--border);
+}
+
+.summary-value {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.healthy-value {
+  color: var(--success);
+}
+
+.offline-value {
+  color: #e11d48;
 }
 
 .node-health-grid {
@@ -632,6 +673,10 @@ input {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+}
+
+.skeleton-grid.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .skeleton-card {
@@ -1672,40 +1717,74 @@ input {
   overflow-y: auto;
 }
 
-.version-row {
-  display: flex;
-  justify-content: space-between;
+.version-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   padding: 14px 16px;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface);
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 
-.version-info {
-  display: grid;
-  gap: 4px;
+.version-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(36, 87, 245, 0.08);
+}
+
+.version-card-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.version-card-body {
   min-width: 0;
   flex: 1;
 }
 
-.version-name {
-  font-size: 16px;
+.version-card-meta {
+  display: grid;
+  gap: 3px;
 }
 
-.version-meta {
-  font-size: 13px;
-  color: var(--muted);
+.version-card-name {
+  font-weight: 600;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.version-actions {
+.version-card-detail {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.version-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+.file-action-restore {
+  background: rgba(13, 148, 136, 0.12);
+  color: #0d9488;
+  border-color: transparent;
+}
+
+.file-action-restore:hover {
+  background: rgba(13, 148, 136, 0.22);
 }
 
 .empty-version-message {
@@ -1900,4 +1979,316 @@ input {
 
 .upload-result-details > div span {
   color: var(--muted);
+}
+
+/* ─── Storage Analytics Page ─── */
+
+.storage-analytics-page {
+  display: grid;
+  gap: 18px;
+}
+
+.storage-analytics-section {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.analytics-node-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-node-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analytics-node-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(244, 247, 251, 0.82);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  font-family: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.analytics-node-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(36, 87, 245, 0.12);
+}
+
+.analytics-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.analytics-node-header h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.analytics-node-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.analytics-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analytics-metric span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.analytics-metric strong {
+  font-size: 16px;
+}
+
+.analytics-util-bar-wrap {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(16, 32, 51, 0.06);
+  overflow: hidden;
+}
+
+.analytics-util-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.analytics-util-caption {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ─── Load Distribution ─── */
+
+.load-distribution-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.load-dist-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+}
+
+.load-dist-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.load-dist-bar-wrap {
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(16, 32, 51, 0.06);
+  overflow: hidden;
+}
+
+.load-dist-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.load-dist-pct {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* ─── Storage Growth Chart ─── */
+
+.growth-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 180px;
+  padding: 8px 0;
+  overflow-x: auto;
+}
+
+.growth-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  width: 36px;
+}
+
+.growth-bar-wrap {
+  flex: 1;
+  width: 24px;
+  border-radius: 6px 6px 0 0;
+  background: rgba(16, 32, 51, 0.06);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.growth-bar-fill {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: var(--primary);
+  transition: height 0.4s ease;
+  min-height: 2px;
+}
+
+.growth-bar-label {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.no-data-message {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* ─── Detail Cards ─── */
+
+.analytics-detail-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(244, 247, 251, 0.82);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  font-family: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.analytics-detail-card:hover {
+  border-color: var(--primary);
+}
+
+.analytics-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.analytics-detail-row span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.analytics-detail-row strong {
+  font-size: 14px;
+}
+
+.storage-analytics-full {
+  grid-column: span 12;
+}
+
+/* ─── Dashboard Storage Analytics Widget ─── */
+
+.storage-analytics-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sa-widget-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(244, 247, 251, 0.82);
+  border: 1px solid var(--border);
+}
+
+.sa-widget-stat span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sa-widget-stat strong {
+  font-size: 18px;
+}
+
+@media (max-width: 720px) {
+  .storage-analytics-widget-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── Analytics Responsive ─── */
+
+@media (max-width: 1200px) {
+  .analytics-node-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .analytics-node-grid.compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .analytics-node-grid,
+  .analytics-node-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-node-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .analytics-node-grid,
+  .analytics-node-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-node-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .load-dist-row {
+    grid-template-columns: 70px 1fr 40px;
+    gap: 8px;
+  }
+
+  .growth-chart {
+    height: 140px;
+  }
+
+  .growth-bar-col {
+    width: 28px;
+  }
+
+  .growth-bar-wrap {
+    width: 18px;
+  }
 }

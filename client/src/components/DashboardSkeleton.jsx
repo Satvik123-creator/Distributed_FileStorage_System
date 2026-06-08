@@ -13,6 +13,10 @@ const DashboardSkeleton = React.memo(() => {
         <div className="skeleton skeleton-panel" />
         <div className="skeleton skeleton-panel" />
       </div>
+      <div className="skeleton-grid two-col">
+        <div className="skeleton skeleton-panel" />
+        <div className="skeleton skeleton-panel" />
+      </div>
     </div>
   );
 });

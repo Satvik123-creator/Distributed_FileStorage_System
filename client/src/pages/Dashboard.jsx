@@ -6,43 +6,21 @@ import fileService from "../services/fileService.js";
 import activityService from "../services/activityService.js";
 import storageService from "../services/storageService.js";
 import authService from "../services/authService.js";
+import shareService from "../services/shareService.js";
 import StatsCard from "../components/StatsCard.jsx";
 import RecentFiles from "../components/RecentFiles.jsx";
 import RecentActivities from "../components/RecentActivities.jsx";
 import QuickActions from "../components/QuickActions.jsx";
 import NodeHealthWidget from "../components/NodeHealthWidget.jsx";
-import StorageUsageWidget from "../components/StorageUsageWidget.jsx";
+import StorageAnalyticsWidget from "../components/StorageAnalyticsWidget.jsx";
 import DashboardSkeleton from "../components/DashboardSkeleton.jsx";
-import NodeDetailsModal from "../components/NodeDetailsModal.jsx";
-
-const parseStatus = (status) => String(status || "unknown").toLowerCase();
 
 const formatBytes = (bytes) => {
   if (!Number.isFinite(bytes)) return "0 B";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-};
-
-const fileCategoryFromMime = (mimeType = "") => {
-  const lower = mimeType.toLowerCase();
-  if (lower.startsWith("image/")) return "Images";
-  if (lower.includes("pdf")) return "PDFs";
-  if (
-    lower.includes("word") ||
-    lower.includes("officedocument") ||
-    lower.startsWith("text/")
-  )
-    return "Documents";
-  if (
-    lower.includes("zip") ||
-    lower.includes("compressed") ||
-    lower.includes("archive")
-  )
-    return "Archives";
-  return "Others";
 };
 
 const Dashboard = () => {
@@ -54,60 +32,48 @@ const Dashboard = () => {
   const [files, setFiles] = useState([]);
   const [activities, setActivities] = useState([]);
   const [health, setHealth] = useState({});
-  const [selectedNode, setSelectedNode] = useState(null);
-  const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
-  const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
-  const [dedupStats, setDedupStats] = useState({ totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
-  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false, algorithm: null, keyVersion: null, encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
+  const [sharedFiles, setSharedFiles] = useState([]);
+  const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0 });
+  const [dedupStats, setDedupStats] = useState({ totalLogicalFiles: 0, totalPhysicalFiles: 0, savingsBytes: 0, savingsPercent: 0 });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData, dedupStatsData, encStatus] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, storageInfoData, dedupStatsData, sharedWithMe] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
         storageService.getStorageStats(),
-        storageService.getFailoverStats(),
         authService.getStorageInfo(),
         storageService.getDedupStats(),
-        storageService.getEncryptionStatus(),
+        shareService.getSharedWithMe(),
       ]);
 
       setFiles(fileList);
       setActivities(activityList);
-      setHealth(storageHealth || {});
-      setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
-      setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
-      setDedupStats(dedupStatsData || { totalLogicalFiles: 0, totalPhysicalFiles: 0, logicalBytes: 0, physicalBytes: 0, savingsBytes: 0, savingsPercent: 0 });
-      setEncryptionStatus(encStatus || { enabled: false, algorithm: null, keyVersion: null, encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
-      // Merge stats into health for richer node display
+      setSharedFiles(sharedWithMe);
+
+      let mergedHealth = { ...storageHealth };
       if (storageStats) {
-        const mergedHealth = { ...storageHealth };
         for (const [nodeName, stats] of Object.entries(storageStats)) {
           if (mergedHealth[nodeName]) {
-            mergedHealth[nodeName] = {
-              status: mergedHealth[nodeName],
-              ...stats,
-            };
+            mergedHealth[nodeName] = { status: mergedHealth[nodeName], ...stats };
           }
         }
-        setHealth(mergedHealth);
       }
+      setHealth(mergedHealth);
+
+      setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0 });
+      setDedupStats(dedupStatsData || { totalLogicalFiles: 0, totalPhysicalFiles: 0, savingsBytes: 0, savingsPercent: 0 });
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         logout();
         navigate(APP_PATHS.login, { replace: true });
         return;
       }
-
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Unable to load dashboard data.",
-      );
+      setError(err.response?.data?.message || err.message || "Unable to load dashboard data.");
     } finally {
       setLoading(false);
     }
@@ -122,106 +88,30 @@ const Dashboard = () => {
     [files],
   );
 
-  const stats = useMemo(() => {
-    const totalFiles = files.length;
+  const statCards = useMemo(() => {
+    const totalDownloads = activities.filter((a) => String(a.action).toUpperCase() === "DOWNLOAD").length;
+    const totalUploads = activities.filter((a) => String(a.action).toUpperCase() === "UPLOAD").length;
     const dedupSavings = dedupStats.savingsBytes > 0
       ? `${formatBytes(dedupStats.savingsBytes)} (${dedupStats.savingsPercent}%)`
       : "0 B";
-    const totalDownloads = activities.filter(
-      (activity) => String(activity.action).toUpperCase() === "DOWNLOAD",
-    ).length;
-    const totalUploads = activities.filter(
-      (activity) => String(activity.action).toUpperCase() === "UPLOAD",
-    ).length;
-    const totalSearches = activities.filter(
-      (activity) => String(activity.action).toUpperCase() === "SEARCH",
-    ).length;
-    const activeStorageNodes = Object.values(health).filter(
-      (status) => parseStatus(status) !== "offline",
-    ).length;
-    const lastFailoverDisplay = failoverStats.lastFailoverTime
-      ? new Date(failoverStats.lastFailoverTime).toLocaleString()
-      : "No failovers";
 
     return [
-      {
-        label: "Total Files",
-        value: totalFiles,
-        detail: "All uploaded files",
-        tone: "blue",
-      },
-      {
-        label: "Total Storage Used",
-        value: formatBytes(totalStorageUsed),
-        detail: "Across all files",
-        tone: "indigo",
-      },
-      {
-        label: "Total Downloads",
-        value: totalDownloads,
-        detail: "Download actions",
-        tone: "green",
-      },
-      {
-        label: "Total Uploads",
-        value: totalUploads,
-        detail: "Upload actions",
-        tone: "blue",
-      },
-      {
-        label: "Total Searches",
-        value: totalSearches,
-        detail: "Search actions",
-        tone: "amber",
-      },
-      {
-        label: "Active Storage Nodes",
-        value: activeStorageNodes,
-        detail: "Non-offline nodes",
-        tone: "slate",
-      },
-      {
-        label: "Dedup Savings",
-        value: dedupSavings,
-        detail: `Across ${dedupStats.totalLogicalFiles} logical / ${dedupStats.totalPhysicalFiles} physical files`,
-        tone: "teal",
-      },
-      {
-        label: "Encryption",
-        value: encryptionStatus.enabled ? "Active" : "Inactive",
-        detail: encryptionStatus.enabled
-          ? `${encryptionStatus.algorithm} (v${encryptionStatus.keyVersion}) — ${encryptionStatus.encryptedFileCount}/${encryptionStatus.totalFileCount} files encrypted`
-          : "No encryption key configured",
-        tone: encryptionStatus.enabled ? "indigo" : "slate",
-      },
-      {
-        label: "Total Failovers",
-        value: failoverStats.totalFailovers,
-        detail: "Automatic failover events",
-        tone: "rose",
-      },
-      {
-        label: "Last Failover",
-        value: lastFailoverDisplay,
-        detail: failoverStats.totalFailovers > 0 ? "Most recent failover" : "No failover recorded",
-        tone: "rose",
-      },
+      { label: "Total Files", value: files.length, detail: "All uploaded files", tone: "blue" },
+      { label: "Storage Used", value: formatBytes(totalStorageUsed), detail: `of ${formatBytes(storageInfo.limitBytes)} limit`, tone: "indigo" },
+      { label: "Downloads", value: totalDownloads, detail: "Download actions", tone: "green" },
+      { label: "Uploads", value: totalUploads, detail: "Upload actions", tone: "blue" },
+      { label: "Shared Files", value: sharedFiles.length, detail: "Files shared with you", tone: "amber" },
+      { label: "Dedup Savings", value: dedupSavings, detail: `Across ${dedupStats.totalPhysicalFiles} physical files`, tone: "teal" },
     ];
-  }, [activities, files, health, totalStorageUsed, failoverStats, dedupStats, encryptionStatus]);
+  }, [files, totalStorageUsed, storageInfo, dedupStats, sharedFiles, activities]);
 
   const latestFiles = useMemo(
-    () =>
-      [...files]
-        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
-        .slice(0, 5),
+    () => [...files].sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt)).slice(0, 5),
     [files],
   );
 
   const latestActivities = useMemo(
-    () =>
-      [...activities]
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 5),
+    () => [...activities].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8),
     [activities],
   );
 
@@ -229,9 +119,10 @@ const Dashboard = () => {
     () =>
       ["node1", "node2", "node3"].map((nodeName) => {
         const nodeData = health?.[nodeName] || {};
+        const status = String(typeof nodeData === "string" ? nodeData : nodeData.status || "unknown").toLowerCase();
         return {
           nodeName,
-          status: parseStatus(typeof nodeData === "string" ? nodeData : nodeData.status),
+          status,
           lastChecked: new Date().toLocaleString(),
           storedFilesCount: nodeData.totalFiles,
           storageUsed: nodeData.storageUsed,
@@ -240,112 +131,54 @@ const Dashboard = () => {
     [health],
   );
 
-  const storageCategories = useMemo(() => {
-    const buckets = {
-      Images: 0,
-      PDFs: 0,
-      Documents: 0,
-      Archives: 0,
-      Others: 0,
-    };
-
-    files.forEach((file) => {
-      const bucket = fileCategoryFromMime(file.mimeType);
-      buckets[bucket] += Number(file.fileSize) || 0;
-    });
-
-    return Object.entries(buckets).map(([label, bytes]) => ({
-      label,
-      bytes,
-      percent:
-        totalStorageUsed === 0
-          ? 0
-          : Number(((bytes / totalStorageUsed) * 100).toFixed(1)),
-    }));
-  }, [files, totalStorageUsed]);
+  const healthyCount = useMemo(() => nodes.filter((n) => n.status === "healthy").length, [nodes]);
+  const offlineCount = useMemo(() => nodes.filter((n) => n.status === "offline").length, [nodes]);
+  const availability = nodes.length > 0 ? Math.round((healthyCount / nodes.length) * 100) : 0;
 
   const quickActions = [
-    {
-      label: "Upload File",
-      icon: "⬆",
-      onClick: () => navigate(APP_PATHS.uploadFile),
-    },
-    {
-      label: "View Files",
-      icon: "📁",
-      onClick: () => navigate(APP_PATHS.myFiles),
-    },
-    {
-      label: "Search Files",
-      icon: "🔎",
-      onClick: () => navigate(APP_PATHS.searchFiles),
-    },
-    {
-      label: "Activity Logs",
-      icon: "🧾",
-      onClick: () => navigate(APP_PATHS.activityLogs),
-    },
-    {
-      label: "Storage Health",
-      icon: "🖥",
-      onClick: () => navigate(APP_PATHS.storageHealth),
-    },
+    { label: "Upload File", icon: "⬆", onClick: () => navigate(APP_PATHS.uploadFile) },
+    { label: "Search Files", icon: "🔎", onClick: () => navigate(APP_PATHS.searchFiles) },
+    { label: "Shared Files", icon: "👥", onClick: () => navigate(APP_PATHS.sharedFiles) },
+    { label: "Storage Health", icon: "🖥", onClick: () => navigate(APP_PATHS.storageHealth) },
   ];
+
+  const handleViewDetails = useCallback((file) => {
+    const details = [
+      `Name: ${file.originalName}`,
+      `Size: ${file.fileSize} bytes`,
+      `Type: ${file.mimeType || "Unknown"}`,
+      `Uploaded: ${new Date(file.uploadedAt).toLocaleString()}`,
+      `File ID: ${file.fileId}`,
+    ].join("\n");
+    alert(details);
+  }, []);
 
   const handleDownload = async (file) => {
     try {
       const blob = await fileService.downloadFile(file.fileId);
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
-      anchor.href = downloadUrl;
+      anchor.href = url;
       anchor.download = file.originalName || "download";
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      window.URL.revokeObjectURL(downloadUrl);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Unable to download file.",
-      );
+      setError(err.response?.data?.message || err.message || "Unable to download file.");
     }
   };
 
-  const selectedNodeDetails = selectedNode
-    ? {
-        nodeName: selectedNode.nodeName,
-        statusLabel:
-          selectedNode.status === "offline"
-            ? "Offline"
-            : selectedNode.status === "warning"
-              ? "Warning"
-              : "Healthy",
-        lastChecked: selectedNode.lastChecked,
-        storedFilesCount: files.filter(
-          (file) => file.nodeLocation === selectedNode.nodeName,
-        ).length,
-        replicaInfo:
-          "Replica information available in the storage monitoring panel.",
-      }
-    : null;
-
-  if (loading) {
-    return <DashboardSkeleton />;
-  }
+  if (loading) return <DashboardSkeleton />;
 
   if (error) {
     return (
       <div className="dashboard-error-state">
         <div className="error-card">
           <p className="section-label">Dashboard Error</p>
-          <h2>We couldn’t load your dashboard</h2>
+          <h2>We couldn't load your dashboard</h2>
           <p>{error}</p>
-          <button
-            type="button"
-            className="file-action-button file-action-primary"
-            onClick={() => setRetryNonce((value) => value + 1)}
-          >
+          <button type="button" className="file-action-button file-action-primary" onClick={() => setRetryNonce((v) => v + 1)}>
             Retry
           </button>
         </div>
@@ -354,91 +187,40 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard-page dashboard-real-page">
+    <div className="dashboard-page">
       <section className="hero-panel">
         <div>
-          <p className="section-label">Overview</p>
-          <h2>Dashboard</h2>
+          <p className="section-label">Analytics Dashboard</p>
+          <h2>Overview</h2>
           <p className="hero-description">
-            Live operational view of file activity, storage usage, and node
-            health across your distributed storage workspace.
+            Live operational view of file activity, storage usage, and node health across your distributed storage workspace.
           </p>
         </div>
-        <div className="hero-badge">Live System Snapshot</div>
+        <div className="hero-badge">Live</div>
       </section>
 
       <section className="stats-grid dashboard-stats-grid">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <StatsCard key={stat.label} {...stat} />
         ))}
       </section>
 
-      {storageInfo.alerts.length > 0 && (
-        <section className="quota-alerts">
-          {storageInfo.alerts.map((alert, i) => (
-            <div key={i} className={`quota-alert quota-alert-${alert.level}`}>
-              {alert.message}
-            </div>
-          ))}
-        </section>
-      )}
-
-      <section className="dashboard-panel storage-quota-panel">
-        <div className="panel-header">
-          <div>
-            <p className="section-label">Storage Quota</p>
-            <h3>Usage overview</h3>
-          </div>
-          <span>{storageInfo.percent}% used</span>
-        </div>
-        <div className="quota-bar-track">
-          <div
-            className="quota-bar-fill"
-            style={{ width: `${Math.min(storageInfo.percent, 100)}%` }}
-          />
-        </div>
-        <div className="quota-details">
-          <div>
-            <span>Used</span>
-            <strong>{formatBytes(storageInfo.usedBytes)}</strong>
-          </div>
-          <div>
-            <span>Remaining</span>
-            <strong>{formatBytes(storageInfo.remainingBytes)}</strong>
-          </div>
-          <div>
-            <span>Limit</span>
-            <strong>{formatBytes(storageInfo.limitBytes)}</strong>
-          </div>
-        </div>
-      </section>
-
       <section className="dashboard-main-grid">
-        <RecentFiles
-          files={latestFiles}
-          onDownload={handleDownload}
-          onViewDetails={(file) =>
-            setSelectedNode({
-              nodeName: file.nodeLocation || "Unknown",
-              status: health?.[file.nodeLocation] || "unknown",
-              lastChecked: new Date(file.uploadedAt).toLocaleString(),
-            })
-          }
-        />
-        <RecentActivities activities={latestActivities} />
-        <QuickActions actions={quickActions} />
-        <NodeHealthWidget nodes={nodes} />
-        <StorageUsageWidget
-          categories={storageCategories}
-          totalBytes={totalStorageUsed}
-        />
-      </section>
+        <RecentFiles files={latestFiles} onDownload={handleDownload} onViewDetails={handleViewDetails} />
 
-      <NodeDetailsModal
-        isOpen={Boolean(selectedNode)}
-        node={selectedNodeDetails}
-        onClose={() => setSelectedNode(null)}
-      />
+        <RecentActivities activities={latestActivities} />
+
+        <NodeHealthWidget
+          nodes={nodes}
+          healthyCount={healthyCount}
+          offlineCount={offlineCount}
+          availability={availability}
+        />
+
+        <QuickActions actions={quickActions} />
+
+        <StorageAnalyticsWidget nodes={nodes} />
+      </section>
     </div>
   );
 };
