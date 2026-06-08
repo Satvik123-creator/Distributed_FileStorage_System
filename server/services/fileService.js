@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import ApiError from "../utils/ApiError.js";
 import { getFilePath } from "./storageService.js";
 import * as activityService from "./activityService.js";
+import { performFailover } from "./failoverService.js";
 
 const createFileMetadata = async (payload) => {
   const { ownerId, originalName } = payload;
@@ -151,22 +152,24 @@ const downloadFile = async (fileId, userId) => {
       result.filePath = primaryPath;
       return result;
     } catch (err) {
-      // primary missing; fall through to try replica
       console.warn(`Primary missing for file ${fileId} at ${primaryPath}: ${err.message}`);
     }
   }
 
-  // Try replica
+  // Try replica and trigger automatic failover if replica exists
   if (replicaPath) {
     try {
       await fs.access(replicaPath);
       result.filePath = replicaPath;
-      // Log that replica was used for download
+
+      // Automatic failover: promote replica to primary, create new replica
       try {
-        await activityService.createActivity({ userId, action: "RECOVERY", fileId: file._id, fileName: file.originalName });
-      } catch (e) {
-        console.warn("Failed to log recovery activity", e);
+        await performFailover({ file, userId });
+        console.log(`Failover completed for file ${fileId}: ${file.primaryNode} -> ${file.replicaNode}`);
+      } catch (foErr) {
+        console.error(`Failover failed for file ${fileId}: ${foErr.message}`);
       }
+
       return result;
     } catch (err) {
       console.warn(`Replica missing for file ${fileId} at ${replicaPath}: ${err.message}`);

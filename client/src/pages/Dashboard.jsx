@@ -54,22 +54,25 @@ const Dashboard = () => {
   const [activities, setActivities] = useState([]);
   const [health, setHealth] = useState({});
   const [selectedNode, setSelectedNode] = useState(null);
+  const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, failoverStatsData] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
         storageService.getStorageStats(),
+        storageService.getFailoverStats(),
       ]);
 
       setFiles(fileList);
       setActivities(activityList);
       setHealth(storageHealth || {});
+      setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
       // Merge stats into health for richer node display
       if (storageStats) {
         const mergedHealth = { ...storageHealth };
@@ -123,6 +126,9 @@ const Dashboard = () => {
     const activeStorageNodes = Object.values(health).filter(
       (status) => parseStatus(status) !== "offline",
     ).length;
+    const lastFailoverDisplay = failoverStats.lastFailoverTime
+      ? new Date(failoverStats.lastFailoverTime).toLocaleString()
+      : "No failovers";
 
     return [
       {
@@ -161,8 +167,20 @@ const Dashboard = () => {
         detail: "Non-offline nodes",
         tone: "slate",
       },
+      {
+        label: "Total Failovers",
+        value: failoverStats.totalFailovers,
+        detail: "Automatic failover events",
+        tone: "rose",
+      },
+      {
+        label: "Last Failover",
+        value: lastFailoverDisplay,
+        detail: failoverStats.totalFailovers > 0 ? "Most recent failover" : "No failover recorded",
+        tone: "rose",
+      },
     ];
-  }, [activities, files, health, totalStorageUsed]);
+  }, [activities, files, health, totalStorageUsed, failoverStats]);
 
   const latestFiles = useMemo(
     () =>

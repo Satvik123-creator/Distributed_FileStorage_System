@@ -28,8 +28,20 @@ const repairFile = async (fileId) => {
   return response.data?.data || response.data;
 };
 
+const getFailoverLogs = async () => {
+  const response = await api.get("/storage/failovers");
+  return response.data?.data || [];
+};
+
+const getFailoverStats = async () => {
+  const response = await api.get("/storage/failovers/stats");
+  return response.data?.data || {};
+};
+
 export default {
   getStorageHealth,
   getStorageStats,
   repairFile,
+  getFailoverLogs,
+  getFailoverStats,
 };

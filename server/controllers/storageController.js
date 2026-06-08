@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import * as fileService from "../services/fileService.js";
 import * as replicationService from "../services/replicationService.js";
 import { getAllNodeStats, updateNodeStats } from "../services/loadBalancerService.js";
+import { getFailoverLogs, getFailoverStats } from "../services/failoverService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,4 +52,18 @@ const repairFile = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Repair result", result));
 });
 
-export { healthCheck, getStorageStats, repairFile };
+const getFailoverLogsHandler = asyncHandler(async (req, res) => {
+  const { limit, skip } = req.query;
+  const logs = await getFailoverLogs({
+    limit: parseInt(limit, 10) || 50,
+    skip: parseInt(skip, 10) || 0,
+  });
+  return res.status(200).json(new ApiResponse(200, "Failover logs", logs));
+});
+
+const getFailoverStatsHandler = asyncHandler(async (req, res) => {
+  const stats = await getFailoverStats();
+  return res.status(200).json(new ApiResponse(200, "Failover stats", stats));
+});
+
+export { healthCheck, getStorageStats, repairFile, getFailoverLogsHandler, getFailoverStatsHandler };

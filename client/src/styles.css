@@ -395,6 +395,10 @@ input {
   border-top: 4px solid #64748b;
 }
 
+.stats-card-rose {
+  border-top: 4px solid #e11d48;
+}
+
 .dashboard-real-page {
   gap: 18px;
 }
