@@ -6,12 +6,18 @@ const PERMISSION_OPTIONS = [
   { value: "edit", label: "View, Download & Edit" },
 ];
 
-const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
+const ShareModal = ({ isOpen, file, userFiles, onClose, onShare, loading }) => {
   const [email, setEmail] = useState("");
   const [permissions, setPermissions] = useState(["view"]);
+  const [selectedFileId, setSelectedFileId] = useState("");
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
+
+  const isStandalone = !file && Array.isArray(userFiles);
+  const selectedFile = isStandalone
+    ? userFiles.find((f) => f.fileId === selectedFileId)
+    : file;
 
   const handlePermissionChange = (value) => {
     if (value === "view") {
@@ -33,6 +39,11 @@ const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
     e.preventDefault();
     setError("");
 
+    if (isStandalone && !selectedFileId) {
+      setError("Please select a file to share");
+      return;
+    }
+
     if (!email.trim()) {
       setError("Email is required");
       return;
@@ -43,10 +54,13 @@ const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
       return;
     }
 
+    const fileIdToShare = isStandalone ? selectedFileId : file.fileId;
+
     try {
-      await onShare(file.fileId, email.trim(), permissions);
+      await onShare(fileIdToShare, email.trim(), permissions);
       setEmail("");
       setPermissions(["view"]);
+      setSelectedFileId("");
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to share file");
@@ -63,7 +77,7 @@ const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
         <div className="modal-header">
           <div>
             <p className="modal-label">Share File</p>
-            <h3>{file?.originalName || "File"}</h3>
+            <h3>{selectedFile?.originalName || (isStandalone ? "Select a file" : "File")}</h3>
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
             ✕
@@ -71,6 +85,24 @@ const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="modal-body">
+          {isStandalone && (
+            <div className="form-field">
+              <label htmlFor="share-file">Select File</label>
+              <select
+                id="share-file"
+                value={selectedFileId}
+                onChange={(e) => setSelectedFileId(e.target.value)}
+              >
+                <option value="">-- Choose a file --</option>
+                {userFiles.map((f) => (
+                  <option key={f.fileId} value={f.fileId}>
+                    {f.originalName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="form-field">
             <label htmlFor="share-email">Share with (email)</label>
             <input
@@ -79,7 +111,7 @@ const ShareModal = ({ isOpen, file, onClose, onShare, loading }) => {
               placeholder="user@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoFocus
+              autoFocus={!isStandalone}
             />
           </div>
 

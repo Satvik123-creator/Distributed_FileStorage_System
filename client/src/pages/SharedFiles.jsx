@@ -139,8 +139,8 @@ const SharedFiles = () => {
                     <strong>{formatFileSize(file.fileSize)}</strong>
                   </div>
                   <div>
-                    <span>Upload Date</span>
-                    <strong>{new Date(file.uploadedAt).toLocaleString()}</strong>
+                    <span>Shared Date</span>
+                    <strong>{file.sharedAt ? new Date(file.sharedAt).toLocaleString() : new Date(file.uploadedAt).toLocaleString()}</strong>
                   </div>
                   <div>
                     <span>Shared by</span>

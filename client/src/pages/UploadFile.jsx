@@ -4,14 +4,13 @@ import FileDropZone from "../components/FileDropZone.jsx";
 import UploadProgress from "../components/UploadProgress.jsx";
 import SelectedFileCard from "../components/SelectedFileCard.jsx";
 import UploadSuccessModal from "../components/UploadSuccessModal.jsx";
-import ChunkedUploadModal from "../components/ChunkedUploadModal.jsx";
+import ChunkedUploadManager from "../components/ChunkedUploadManager.jsx";
 import fileService from "../services/fileService.js";
 import { APP_PATHS } from "../routes/appRoutes.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const MAX_FILE_SIZE_MB = 25;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-const CHUNK_THRESHOLD_BYTES = 20 * 1024 * 1024;
+const CHUNKED_UPLOAD_THRESHOLD = 10 * 1024 * 1024;
 
 const getFriendlyError = (error) => {
   if (!error) return "Upload failed. Please try again.";
@@ -44,36 +43,20 @@ const UploadFile = () => {
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [successData, setSuccessData] = useState(null);
-  const [chunkedModalFile, setChunkedModalFile] = useState(null);
+  const [chunkedUpload, setChunkedUpload] = useState(null);
 
   const canUpload = useMemo(
-    () => Boolean(selectedFile) && !isUploading,
-    [selectedFile, isUploading],
+    () => Boolean(selectedFile) && !isUploading && !chunkedUpload,
+    [selectedFile, isUploading, chunkedUpload],
   );
-
-  const validateFile = (file) => {
-    if (!file) return "Please select a file to upload.";
-    if (file.size <= 0) return "Empty files cannot be uploaded.";
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      if (file.size < CHUNK_THRESHOLD_BYTES) {
-        return `File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`;
-      }
-      // Files above threshold use chunked upload — skip size validation
-      return null;
-    }
-    return null;
-  };
 
   const handleFileSelect = (file) => {
     setError("");
     setSuccessData(null);
 
-    const validationError = validateFile(file);
-    if (validationError) {
-      setSelectedFile(null);
-      setStatus("Ready to Upload");
-      setProgress(0);
-      setError(validationError);
+    if (!file) return;
+    if (file.size <= 0) {
+      setError("Empty files cannot be uploaded.");
       return;
     }
 
@@ -83,22 +66,43 @@ const UploadFile = () => {
   };
 
   const clearSelectedFile = () => {
-    if (isUploading) return;
+    if (isUploading || chunkedUpload) return;
     setSelectedFile(null);
     setProgress(0);
     setStatus("Ready to Upload");
     setError("");
   };
 
+  const handleChunkedSuccess = (data) => {
+    setChunkedUpload(null);
+    setSelectedFile(null);
+    setProgress(100);
+    setStatus("Success");
+    setSuccessData({
+      fileName: data.originalName || (selectedFile?.name || "file"),
+      uploadTime: new Date().toLocaleString(),
+      primaryNode: data.primaryNode,
+      nodeLocation: data.primaryNode,
+    });
+  };
+
+  const handleChunkedCancel = () => {
+    setChunkedUpload(null);
+    setSelectedFile(null);
+    setStatus("Ready to Upload");
+    setProgress(0);
+  };
+
   const handleUpload = async () => {
-    const validationError = validateFile(selectedFile);
-    if (validationError) {
-      setError(validationError);
+    if (!selectedFile) return;
+
+    if (selectedFile.size > CHUNKED_UPLOAD_THRESHOLD) {
+      setChunkedUpload(selectedFile);
       return;
     }
 
-    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-      setChunkedModalFile(selectedFile);
+    if (selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      setError(`File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`);
       return;
     }
 
@@ -175,46 +179,69 @@ const UploadFile = () => {
 
       <div className="upload-grid">
         <div className="upload-main-column">
-          <FileDropZone
-            onFileSelect={handleFileSelect}
-            selectedFile={selectedFile}
-            disabled={isUploading}
-          />
-
-          {selectedFile && (
+          {chunkedUpload ? (
+            <ChunkedUploadManager
+              file={chunkedUpload}
+              onSuccess={handleChunkedSuccess}
+              onCancel={handleChunkedCancel}
+            />
+          ) : (
             <>
-              <SelectedFileCard
-                file={selectedFile}
-                onClear={clearSelectedFile}
+              <FileDropZone
+                onFileSelect={handleFileSelect}
+                selectedFile={selectedFile}
+                disabled={isUploading}
               />
-              <div className="upload-actions-row">
-                <button
-                  type="button"
-                  className="file-action-button file-action-primary upload-button"
-                  onClick={handleUpload}
-                  disabled={!canUpload}
-                >
-                  {isUploading ? "Uploading..." : "Upload File"}
-                </button>
-                <div className="upload-limit-note">
-                  Maximum file size: {MAX_FILE_SIZE_MB} MB
-                </div>
-              </div>
+
+              {selectedFile && (
+                <>
+                  <SelectedFileCard
+                    file={selectedFile}
+                    onClear={clearSelectedFile}
+                  />
+                  <div className="upload-actions-row">
+                    <button
+                      type="button"
+                      className="file-action-button file-action-primary upload-button"
+                      onClick={handleUpload}
+                      disabled={!canUpload}
+                    >
+                      {isUploading ? "Uploading..." : "Upload File"}
+                    </button>
+                    <div className="upload-limit-note">
+                      Files up to {MAX_FILE_SIZE_MB} MB upload directly; larger files use chunked upload
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
 
         <aside className="upload-side-panel">
-          <UploadProgress status={status} progress={progress} />
-          <div className="upload-status-card">
-            <h3>Upload States</h3>
-            <ul>
-              <li>Ready to Upload</li>
-              <li>Uploading</li>
-              <li>Success</li>
-              <li>Failed</li>
-            </ul>
-          </div>
+          {chunkedUpload ? (
+            <div className="upload-progress-card">
+              <div className="upload-progress-header">
+                <strong>Chunked Upload Active</strong>
+              </div>
+              <p className="chunked-side-note">
+                Large file upload in progress. Progress details are shown in the main panel.
+              </p>
+            </div>
+          ) : (
+            <>
+              <UploadProgress status={status} progress={progress} />
+              <div className="upload-status-card">
+                <h3>Upload States</h3>
+                <ul>
+                  <li>Ready to Upload</li>
+                  <li>Uploading</li>
+                  <li>Success</li>
+                  <li>Failed</li>
+                </ul>
+              </div>
+            </>
+          )}
         </aside>
       </div>
 
@@ -224,29 +251,6 @@ const UploadFile = () => {
         onUploadAnother={uploadAnother}
         onGoToMyFiles={() => navigate(APP_PATHS.myFiles)}
       />
-
-      {chunkedModalFile && (
-        <ChunkedUploadModal
-          file={chunkedModalFile}
-          onClose={() => {
-            setChunkedModalFile(null);
-            setSelectedFile(null);
-            setStatus("Ready to Upload");
-          }}
-          onSuccess={(data) => {
-            setChunkedModalFile(null);
-            setSelectedFile(null);
-            setProgress(100);
-            setStatus("Success");
-            setSuccessData({
-              fileName: data.originalName,
-              uploadTime: new Date().toLocaleString(),
-              primaryNode: data.primaryNode,
-              nodeLocation: data.primaryNode,
-            });
-          }}
-        />
-      )}
     </div>
   );
 };

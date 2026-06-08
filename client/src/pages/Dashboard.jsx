@@ -13,6 +13,10 @@ import RecentActivities from "../components/RecentActivities.jsx";
 import QuickActions from "../components/QuickActions.jsx";
 import NodeHealthWidget from "../components/NodeHealthWidget.jsx";
 import StorageAnalyticsWidget from "../components/StorageAnalyticsWidget.jsx";
+import FailoverWidget from "../components/FailoverWidget.jsx";
+import DedupAnalyticsWidget from "../components/DedupAnalyticsWidget.jsx";
+import EncryptionWidget from "../components/EncryptionWidget.jsx";
+import StorageUsageMeter from "../components/StorageUsageMeter.jsx";
 import DashboardSkeleton from "../components/DashboardSkeleton.jsx";
 
 const formatBytes = (bytes) => {
@@ -35,13 +39,15 @@ const Dashboard = () => {
   const [sharedFiles, setSharedFiles] = useState([]);
   const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0 });
   const [dedupStats, setDedupStats] = useState({ totalLogicalFiles: 0, totalPhysicalFiles: 0, savingsBytes: 0, savingsPercent: 0 });
+  const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false, algorithm: "aes-256-gcm", encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats, storageInfoData, dedupStatsData, sharedWithMe] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, storageInfoData, dedupStatsData, sharedWithMe, failoverStatsData, encryptionStatusData] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
@@ -49,6 +55,8 @@ const Dashboard = () => {
         authService.getStorageInfo(),
         storageService.getDedupStats(),
         shareService.getSharedWithMe(),
+        storageService.getFailoverStats(),
+        storageService.getEncryptionStatus(),
       ]);
 
       setFiles(fileList);
@@ -67,6 +75,8 @@ const Dashboard = () => {
 
       setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0 });
       setDedupStats(dedupStatsData || { totalLogicalFiles: 0, totalPhysicalFiles: 0, savingsBytes: 0, savingsPercent: 0 });
+      setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
+      setEncryptionStatus(encryptionStatusData || { enabled: false, algorithm: "aes-256-gcm", encryptedFileCount: 0, totalFileCount: 0, encryptionRate: 0 });
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         logout();
@@ -138,7 +148,7 @@ const Dashboard = () => {
   const quickActions = [
     { label: "Upload File", icon: "⬆", onClick: () => navigate(APP_PATHS.uploadFile) },
     { label: "Search Files", icon: "🔎", onClick: () => navigate(APP_PATHS.searchFiles) },
-    { label: "Shared Files", icon: "👥", onClick: () => navigate(APP_PATHS.sharedFiles) },
+    { label: "Shared Files", icon: "👥", onClick: () => navigate(APP_PATHS.sharedWithMe) },
     { label: "Storage Health", icon: "🖥", onClick: () => navigate(APP_PATHS.storageHealth) },
   ];
 
@@ -220,6 +230,21 @@ const Dashboard = () => {
         <QuickActions actions={quickActions} />
 
         <StorageAnalyticsWidget nodes={nodes} />
+
+        <FailoverWidget
+          totalFailovers={failoverStats.totalFailovers}
+          lastFailoverTime={failoverStats.lastFailoverTime}
+        />
+
+        <DedupAnalyticsWidget dedupStats={dedupStats} />
+
+        <StorageUsageMeter
+          usedBytes={storageInfo.usedBytes}
+          limitBytes={storageInfo.limitBytes}
+          percent={storageInfo.percent}
+        />
+
+        <EncryptionWidget encryptionStatus={encryptionStatus} />
       </section>
     </div>
   );

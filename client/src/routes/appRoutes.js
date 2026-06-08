@@ -7,6 +7,10 @@ export const APP_PATHS = {
   searchFiles: "/search",
   activityLogs: "/dashboard/activity-logs",
   storageHealth: "/storage-health",
-  sharedFiles: "/shared-with-me",
+  sharedWithMe: "/shared-with-me",
+  sharedByMe: "/shared-by-me",
   storageAnalytics: "/storage-analytics",
+  failoverHistory: "/failover-history",
+  profile: "/profile",
+  architecture: "/architecture",
 };

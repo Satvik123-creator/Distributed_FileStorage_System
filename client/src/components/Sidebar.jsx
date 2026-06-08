@@ -8,9 +8,13 @@ const navItems = [
   { label: "Upload File", to: APP_PATHS.uploadFile },
   { label: "Search Files", to: APP_PATHS.searchFiles },
   { label: "Activity Logs", to: APP_PATHS.activityLogs },
-  { label: "Shared Files", to: APP_PATHS.sharedFiles },
+  { label: "Shared with Me", to: APP_PATHS.sharedWithMe },
+  { label: "Shared by Me", to: APP_PATHS.sharedByMe },
   { label: "Storage Health", to: APP_PATHS.storageHealth },
   { label: "Storage Analytics", to: APP_PATHS.storageAnalytics },
+  { label: "Architecture", to: APP_PATHS.architecture },
+  { label: "Failover History", to: APP_PATHS.failoverHistory },
+  { label: "Profile", to: APP_PATHS.profile },
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {
