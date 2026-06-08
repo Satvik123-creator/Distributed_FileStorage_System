@@ -5,6 +5,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { logAction } from "../utils/logService.js";
+import { getUserStorageInfo, recalculateAndGetStorageInfo } from "../services/quotaService.js";
 
 const generateToken = (userId) => {
   if (!process.env.JWT_SECRET) {
@@ -18,6 +19,8 @@ const sanitizeUser = (user) => ({
   _id: user._id,
   name: user.name,
   email: user.email,
+  storageLimit: user.storageLimit,
+  storageUsed: user.storageUsed,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
@@ -103,4 +106,9 @@ const getProfile = asyncHandler(async (req, res) => {
   );
 });
 
-export { registerUser, loginUser, getProfile };
+const getStorageInfo = asyncHandler(async (req, res) => {
+  const info = await recalculateAndGetStorageInfo(req.user._id);
+  return res.status(200).json(new ApiResponse(200, "Storage info", info));
+});
+
+export { registerUser, loginUser, getProfile, getStorageInfo };

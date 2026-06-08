@@ -10,6 +10,7 @@ import {
   storeFile,
 } from "../services/storageService.js";
 import { updateNodeStats } from "../services/loadBalancerService.js";
+import { checkQuota, updateStorageUsed } from "../services/quotaService.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -57,6 +58,10 @@ const uploadFile = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user._id.toString();
+
+  // Check storage quota before proceeding
+  await checkQuota(userId, req.file.size);
+
   const primaryNode = await chooseNode();
   const storedName = generateUniqueFileName(req.file.originalname);
 
@@ -95,6 +100,9 @@ const uploadFile = asyncHandler(async (req, res) => {
     // Update node statistics after upload
     await updateNodeStats(primaryNode);
     await updateNodeStats(replicaNode);
+
+    // Recalculate user storage used
+    await updateStorageUsed(req.user._id);
 
     const isVersion = file.version > 1;
     const logActionName = isVersion ? "VERSION_CREATE" : "UPLOAD";
@@ -179,6 +187,9 @@ const deleteFile = asyncHandler(async (req, res) => {
       await updateNodeStats(file.replicaNode).catch(() => {});
     }
   }
+
+  // Recalculate user storage used
+  await updateStorageUsed(req.user._id).catch(() => {});
 
   // Log delete activity
   logAction(req.user._id, "DELETE", { fileId, fileName: null }).catch(() => {});

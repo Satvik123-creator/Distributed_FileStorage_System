@@ -29,8 +29,14 @@ const getProfile = async () => {
   return res.data;
 };
 
+const getStorageInfo = async () => {
+  const res = await api.get("/auth/storage");
+  return res.data?.data || {};
+};
+
 export default {
   login,
   register,
   getProfile,
+  getStorageInfo,
 };

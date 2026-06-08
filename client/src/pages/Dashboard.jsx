@@ -5,6 +5,7 @@ import { APP_PATHS } from "../routes/appRoutes.js";
 import fileService from "../services/fileService.js";
 import activityService from "../services/activityService.js";
 import storageService from "../services/storageService.js";
+import authService from "../services/authService.js";
 import StatsCard from "../components/StatsCard.jsx";
 import RecentFiles from "../components/RecentFiles.jsx";
 import RecentActivities from "../components/RecentActivities.jsx";
@@ -55,24 +56,27 @@ const Dashboard = () => {
   const [health, setHealth] = useState({});
   const [selectedNode, setSelectedNode] = useState(null);
   const [failoverStats, setFailoverStats] = useState({ totalFailovers: 0, lastFailoverTime: null });
+  const [storageInfo, setStorageInfo] = useState({ usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth, storageStats, failoverStatsData] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats, failoverStatsData, storageInfoData] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
         storageService.getStorageStats(),
         storageService.getFailoverStats(),
+        authService.getStorageInfo(),
       ]);
 
       setFiles(fileList);
       setActivities(activityList);
       setHealth(storageHealth || {});
       setFailoverStats(failoverStatsData || { totalFailovers: 0, lastFailoverTime: null });
+      setStorageInfo(storageInfoData || { usedBytes: 0, limitBytes: 1073741824, percent: 0, remainingBytes: 1073741824, alerts: [] });
       // Merge stats into health for richer node display
       if (storageStats) {
         const mergedHealth = { ...storageHealth };
@@ -344,6 +348,46 @@ const Dashboard = () => {
         {stats.map((stat) => (
           <StatsCard key={stat.label} {...stat} />
         ))}
+      </section>
+
+      {storageInfo.alerts.length > 0 && (
+        <section className="quota-alerts">
+          {storageInfo.alerts.map((alert, i) => (
+            <div key={i} className={`quota-alert quota-alert-${alert.level}`}>
+              {alert.message}
+            </div>
+          ))}
+        </section>
+      )}
+
+      <section className="dashboard-panel storage-quota-panel">
+        <div className="panel-header">
+          <div>
+            <p className="section-label">Storage Quota</p>
+            <h3>Usage overview</h3>
+          </div>
+          <span>{storageInfo.percent}% used</span>
+        </div>
+        <div className="quota-bar-track">
+          <div
+            className="quota-bar-fill"
+            style={{ width: `${Math.min(storageInfo.percent, 100)}%` }}
+          />
+        </div>
+        <div className="quota-details">
+          <div>
+            <span>Used</span>
+            <strong>{formatBytes(storageInfo.usedBytes)}</strong>
+          </div>
+          <div>
+            <span>Remaining</span>
+            <strong>{formatBytes(storageInfo.remainingBytes)}</strong>
+          </div>
+          <div>
+            <span>Limit</span>
+            <strong>{formatBytes(storageInfo.limitBytes)}</strong>
+          </div>
+        </div>
       </section>
 
       <section className="dashboard-main-grid">
