@@ -1815,3 +1815,89 @@ input {
 .shared-files-page .file-card .file-meta-grid {
   grid-template-columns: repeat(2, 1fr);
 }
+
+/* Chunked Upload Modal */
+.chunked-upload-modal {
+  max-width: 500px;
+}
+
+.chunked-upload-info {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.chunked-upload-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.chunked-upload-info .info-row span {
+  color: var(--muted);
+}
+
+.chunked-upload-info .status-badge {
+  text-transform: capitalize;
+}
+
+.chunk-progress-section {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chunk-progress-track {
+  height: 16px;
+}
+
+.chunk-progress-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.chunk-progress-pct {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.upload-start-btn {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.upload-success-section {
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.upload-complete-icon {
+  font-size: 48px;
+  color: #22c55e;
+}
+
+.upload-success-msg {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.upload-result-details {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.upload-result-details > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.upload-result-details > div span {
+  color: var(--muted);
+}

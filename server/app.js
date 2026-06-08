@@ -6,6 +6,7 @@ import fileRoutes from "./routes/fileRoutes.js";
 import activityRoutes from "./routes/activityRoutes.js";
 import storageRoutes from "./routes/storageRoutes.js";
 import shareRoutes from "./routes/shareRoutes.js";
+import chunkRoutes from "./routes/chunkRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 
 const app = express();
@@ -32,6 +33,7 @@ app.use("/api/files", fileRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/api/share", shareRoutes);
+app.use("/api/files/chunk", chunkRoutes);
 
 app.use(errorHandler);
 

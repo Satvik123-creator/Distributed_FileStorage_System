@@ -4,12 +4,14 @@ import FileDropZone from "../components/FileDropZone.jsx";
 import UploadProgress from "../components/UploadProgress.jsx";
 import SelectedFileCard from "../components/SelectedFileCard.jsx";
 import UploadSuccessModal from "../components/UploadSuccessModal.jsx";
+import ChunkedUploadModal from "../components/ChunkedUploadModal.jsx";
 import fileService from "../services/fileService.js";
 import { APP_PATHS } from "../routes/appRoutes.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const MAX_FILE_SIZE_MB = 25;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const CHUNK_THRESHOLD_BYTES = 20 * 1024 * 1024;
 
 const getFriendlyError = (error) => {
   if (!error) return "Upload failed. Please try again.";
@@ -42,6 +44,7 @@ const UploadFile = () => {
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [chunkedModalFile, setChunkedModalFile] = useState(null);
 
   const canUpload = useMemo(
     () => Boolean(selectedFile) && !isUploading,
@@ -52,7 +55,11 @@ const UploadFile = () => {
     if (!file) return "Please select a file to upload.";
     if (file.size <= 0) return "Empty files cannot be uploaded.";
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      return `File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`;
+      if (file.size < CHUNK_THRESHOLD_BYTES) {
+        return `File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`;
+      }
+      // Files above threshold use chunked upload — skip size validation
+      return null;
     }
     return null;
   };
@@ -87,6 +94,11 @@ const UploadFile = () => {
     const validationError = validateFile(selectedFile);
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+      setChunkedModalFile(selectedFile);
       return;
     }
 
@@ -212,6 +224,29 @@ const UploadFile = () => {
         onUploadAnother={uploadAnother}
         onGoToMyFiles={() => navigate(APP_PATHS.myFiles)}
       />
+
+      {chunkedModalFile && (
+        <ChunkedUploadModal
+          file={chunkedModalFile}
+          onClose={() => {
+            setChunkedModalFile(null);
+            setSelectedFile(null);
+            setStatus("Ready to Upload");
+          }}
+          onSuccess={(data) => {
+            setChunkedModalFile(null);
+            setSelectedFile(null);
+            setProgress(100);
+            setStatus("Success");
+            setSuccessData({
+              fileName: data.originalName,
+              uploadTime: new Date().toLocaleString(),
+              primaryNode: data.primaryNode,
+              nodeLocation: data.primaryNode,
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
