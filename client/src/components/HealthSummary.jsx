@@ -1,10 +1,21 @@
 import React from "react";
 
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
 const HealthSummary = ({
   totalNodes,
   healthyNodes,
   offlineNodes,
   availability,
+  totalFiles,
+  totalStorageUsed,
   lastUpdated,
 }) => {
   return (
@@ -30,6 +41,14 @@ const HealthSummary = ({
         <div>
           <span>Availability</span>
           <strong>{availability}%</strong>
+        </div>
+        <div>
+          <span>Total Files</span>
+          <strong>{totalFiles ?? "N/A"}</strong>
+        </div>
+        <div>
+          <span>Total Storage</span>
+          <strong>{totalStorageUsed != null ? formatBytes(totalStorageUsed) : "N/A"}</strong>
         </div>
       </div>
 

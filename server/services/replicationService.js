@@ -1,8 +1,8 @@
 import { getFilePath, storeFile, createUserFolderIfNotExists } from "./storageService.js";
 import fs from "fs/promises";
 import ApiError from "../utils/ApiError.js";
-import chooseNode from "../utils/chooseNode.js";
 import * as activityService from "./activityService.js";
+import { updateNodeStats } from "./loadBalancerService.js";
 
 const getReplicaNode = (primary) => {
   const nodes = ["node1", "node2", "node3"];
@@ -70,6 +70,7 @@ const repairMissingReplica = async ({ fileMeta }) => {
       await createUserFolderIfNotExists(replicaNode, ownerId.toString());
       await fs.copyFile(primaryPath, replicaPath);
       await activityService.createActivity({ userId: ownerId, action: "REPAIR", fileId: fileMeta._id, fileName: originalName });
+      await updateNodeStats(replicaNode);
       return { repaired: "replica" };
     }
 
@@ -77,6 +78,7 @@ const repairMissingReplica = async ({ fileMeta }) => {
       await createUserFolderIfNotExists(primaryNode, ownerId.toString());
       await fs.copyFile(replicaPath, primaryPath);
       await activityService.createActivity({ userId: ownerId, action: "REPAIR", fileId: fileMeta._id, fileName: originalName });
+      await updateNodeStats(primaryNode);
       return { repaired: "primary" };
     }
 

@@ -6,6 +6,7 @@ import fs from "fs/promises";
 import { fileURLToPath } from "url";
 import * as fileService from "../services/fileService.js";
 import * as replicationService from "../services/replicationService.js";
+import { getAllNodeStats, updateNodeStats } from "../services/loadBalancerService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +29,11 @@ const healthCheck = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Storage health", status));
 });
 
+const getStorageStats = asyncHandler(async (req, res) => {
+  const stats = await getAllNodeStats();
+  return res.status(200).json(new ApiResponse(200, "Storage stats", stats));
+});
+
 const repairFile = asyncHandler(async (req, res) => {
   const { fileId } = req.params;
 
@@ -39,7 +45,10 @@ const repairFile = asyncHandler(async (req, res) => {
 
   const result = await replicationService.repairMissingReplica({ fileMeta: file });
 
+  await updateNodeStats(file.primaryNode);
+  await updateNodeStats(file.replicaNode);
+
   return res.status(200).json(new ApiResponse(200, "Repair result", result));
 });
 
-export { healthCheck, repairFile };
+export { healthCheck, getStorageStats, repairFile };

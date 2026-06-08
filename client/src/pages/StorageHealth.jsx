@@ -19,14 +19,24 @@ const statusLabel = (status) => {
   return "Unknown";
 };
 
-const buildNodeList = (healthData, previousNodes = {}) => {
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
+const buildNodeList = (healthData, statsData, previousNodes = {}) => {
   const nodes = ["node1", "node2", "node3"];
 
   return nodes.map((nodeName) => ({
     nodeName,
     status: parseStatus(healthData?.[nodeName]),
     lastChecked: new Date().toLocaleString(),
-    storedFilesCount: previousNodes[nodeName]?.storedFilesCount,
+    storedFilesCount: statsData?.[nodeName]?.totalFiles ?? previousNodes[nodeName]?.storedFilesCount,
+    storageUsed: statsData?.[nodeName]?.storageUsed ?? previousNodes[nodeName]?.storageUsed,
     replicaInfo: previousNodes[nodeName]?.replicaInfo,
   }));
 };
@@ -55,10 +65,14 @@ const StorageHealth = () => {
       setError("");
 
       try {
-        const healthData = await storageService.getStorageHealth();
+        const [healthData, statsData] = await Promise.all([
+          storageService.getStorageHealth(),
+          storageService.getStorageStats(),
+        ]);
         setNodes((currentNodes) =>
           buildNodeList(
             healthData,
+            statsData,
             Object.fromEntries(
               currentNodes.map((node) => [node.nodeName, node]),
             ),
@@ -99,10 +113,18 @@ const StorageHealth = () => {
     const offlineNodes = nodes.filter(
       (node) => parseStatus(node.status) === "offline",
     ).length;
+    const totalStorageUsed = nodes.reduce(
+      (sum, node) => sum + (Number(node.storageUsed) || 0),
+      0,
+    );
+    const totalFiles = nodes.reduce(
+      (sum, node) => sum + (Number(node.storedFilesCount) || 0),
+      0,
+    );
     const availability =
       totalNodes === 0 ? 0 : ((healthyNodes / totalNodes) * 100).toFixed(1);
 
-    return { totalNodes, healthyNodes, offlineNodes, availability };
+    return { totalNodes, healthyNodes, offlineNodes, availability, totalStorageUsed, totalFiles };
   }, [nodes]);
 
   const systemAlert =
@@ -178,6 +200,8 @@ const StorageHealth = () => {
         healthyNodes={summary.healthyNodes}
         offlineNodes={summary.offlineNodes}
         availability={summary.availability}
+        totalFiles={summary.totalFiles}
+        totalStorageUsed={summary.totalStorageUsed}
         lastUpdated={lastUpdated || "Not updated yet"}
       />
 
@@ -194,6 +218,8 @@ const StorageHealth = () => {
               nodeName={node.nodeName}
               status={node.status}
               lastChecked={node.lastChecked}
+              storedFilesCount={node.storedFilesCount}
+              storageUsed={node.storageUsed}
               selected={selectedNode?.nodeName === node.nodeName}
               onClick={() =>
                 setSelectedNode({

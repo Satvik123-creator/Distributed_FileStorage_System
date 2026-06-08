@@ -9,6 +9,7 @@ import {
   generateUniqueFileName,
   storeFile,
 } from "../services/storageService.js";
+import { updateNodeStats } from "../services/loadBalancerService.js";
 import fs from "fs/promises";
 
 const getMyFiles = asyncHandler(async (req, res) => {
@@ -53,7 +54,7 @@ const uploadFile = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user._id.toString();
-  const primaryNode = chooseNode();
+  const primaryNode = await chooseNode();
   const storedName = generateUniqueFileName(req.file.originalname);
 
   let savedPath;
@@ -87,6 +88,11 @@ const uploadFile = asyncHandler(async (req, res) => {
       mimeType: req.file.mimetype,
       uploadedAt: new Date(),
     });
+
+    // Update node statistics after upload
+    await updateNodeStats(primaryNode);
+    await updateNodeStats(replicaNode);
+
     // Log upload activity (do not block response)
     logAction(req.user._id, "UPLOAD", {
       fileId: file._id,
@@ -130,7 +136,15 @@ const deleteFile = asyncHandler(async (req, res) => {
   const { fileId } = req.params;
   const userId = req.user._id.toString();
 
-  await fileService.deleteFile(fileId, userId);
+  const file = await fileService.deleteFile(fileId, userId);
+
+  // Update node statistics after deletion
+  if (file) {
+    await updateNodeStats(file.primaryNode).catch(() => {});
+    if (file.replicaNode) {
+      await updateNodeStats(file.replicaNode).catch(() => {});
+    }
+  }
 
   // Log delete activity
   logAction(req.user._id, "DELETE", { fileId, fileName: null }).catch(() => {});

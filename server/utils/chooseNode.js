@@ -1,10 +1,7 @@
-const nodes = ["node1", "node2", "node3"];
-let currentIndex = 0;
+import { selectLeastLoadedNode } from "../services/loadBalancerService.js";
 
-const chooseNode = () => {
-  const node = nodes[currentIndex];
-  currentIndex = (currentIndex + 1) % nodes.length;
-  return node;
+const chooseNode = async () => {
+  return await selectLeastLoadedNode();
 };
 
 export default chooseNode;

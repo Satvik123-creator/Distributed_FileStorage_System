@@ -1,5 +1,14 @@
 import React from "react";
 
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
 const statusClass = (status) => {
   const value = String(status || "unknown").toLowerCase();
   if (value === "healthy") return "status-healthy";
@@ -26,6 +35,14 @@ const NodeHealthWidget = React.memo(({ nodes }) => {
               <strong>{node.nodeName}</strong>
               <span className={`status-pill ${statusClass(node.status)}`}>
                 {String(node.status || "unknown").toUpperCase()}
+              </span>
+            </div>
+            <div className="node-health-meta-row">
+              <span className="node-health-meta">
+                Files: {node.storedFilesCount ?? "N/A"}
+              </span>
+              <span className="node-health-meta">
+                Storage: {node.storageUsed != null ? formatBytes(node.storageUsed) : "N/A"}
               </span>
             </div>
             <span className="node-health-meta">

@@ -1,5 +1,14 @@
 import React from "react";
 
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
 const statusMeta = {
   healthy: { label: "Healthy", className: "status-healthy", icon: "●" },
   warning: { label: "Warning", className: "status-warning", icon: "●" },
@@ -11,6 +20,8 @@ const NodeStatusCard = ({
   nodeName,
   status,
   lastChecked,
+  storedFilesCount,
+  storageUsed,
   onClick,
   selected,
 }) => {
@@ -42,6 +53,17 @@ const NodeStatusCard = ({
         <div>
           <span>Last Checked</span>
           <strong>{lastChecked}</strong>
+        </div>
+      </div>
+
+      <div className="node-status-meta">
+        <div>
+          <span>Stored Files</span>
+          <strong>{storedFilesCount ?? "N/A"}</strong>
+        </div>
+        <div>
+          <span>Storage Used</span>
+          <strong>{storageUsed != null ? formatBytes(storageUsed) : "N/A"}</strong>
         </div>
       </div>
     </button>

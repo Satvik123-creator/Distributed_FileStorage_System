@@ -534,6 +534,12 @@ input {
   font-size: 14px;
 }
 
+.node-health-meta-row {
+  display: flex;
+  gap: 16px;
+  margin: 4px 0;
+}
+
 .storage-usage-list {
   display: grid;
   gap: 14px;

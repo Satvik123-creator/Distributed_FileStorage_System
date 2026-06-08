@@ -1,5 +1,14 @@
 import React from "react";
 
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+};
+
 const NodeDetailsModal = ({ isOpen, node, onClose }) => {
   if (!isOpen || !node) return null;
 
@@ -38,6 +47,10 @@ const NodeDetailsModal = ({ isOpen, node, onClose }) => {
           <div>
             <span>Stored Files Count</span>
             <strong>{node.storedFilesCount ?? "Not available"}</strong>
+          </div>
+          <div>
+            <span>Storage Used</span>
+            <strong>{node.storageUsed != null ? formatBytes(node.storageUsed) : "Not available"}</strong>
           </div>
           <div>
             <span>Replica Information</span>

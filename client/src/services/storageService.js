@@ -18,6 +18,11 @@ const getStorageHealth = async () => {
   return response.data?.data || {};
 };
 
+const getStorageStats = async () => {
+  const response = await api.get("/storage/stats");
+  return response.data?.data || {};
+};
+
 const repairFile = async (fileId) => {
   const response = await api.post(`/storage/repair/${fileId}`);
   return response.data?.data || response.data;
@@ -25,5 +30,6 @@ const repairFile = async (fileId) => {
 
 export default {
   getStorageHealth,
+  getStorageStats,
   repairFile,
 };

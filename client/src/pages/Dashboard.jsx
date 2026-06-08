@@ -60,15 +60,29 @@ const Dashboard = () => {
     setError("");
 
     try {
-      const [fileList, activityList, storageHealth] = await Promise.all([
+      const [fileList, activityList, storageHealth, storageStats] = await Promise.all([
         fileService.getMyFiles(),
         activityService.getMyHistory(),
         storageService.getStorageHealth(),
+        storageService.getStorageStats(),
       ]);
 
       setFiles(fileList);
       setActivities(activityList);
       setHealth(storageHealth || {});
+      // Merge stats into health for richer node display
+      if (storageStats) {
+        const mergedHealth = { ...storageHealth };
+        for (const [nodeName, stats] of Object.entries(storageStats)) {
+          if (mergedHealth[nodeName]) {
+            mergedHealth[nodeName] = {
+              status: mergedHealth[nodeName],
+              ...stats,
+            };
+          }
+        }
+        setHealth(mergedHealth);
+      }
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         logout();
@@ -168,11 +182,16 @@ const Dashboard = () => {
 
   const nodes = useMemo(
     () =>
-      ["node1", "node2", "node3"].map((nodeName) => ({
-        nodeName,
-        status: parseStatus(health?.[nodeName]),
-        lastChecked: new Date().toLocaleString(),
-      })),
+      ["node1", "node2", "node3"].map((nodeName) => {
+        const nodeData = health?.[nodeName] || {};
+        return {
+          nodeName,
+          status: parseStatus(typeof nodeData === "string" ? nodeData : nodeData.status),
+          lastChecked: new Date().toLocaleString(),
+          storedFilesCount: nodeData.totalFiles,
+          storageUsed: nodeData.storageUsed,
+        };
+      }),
     [health],
   );
 

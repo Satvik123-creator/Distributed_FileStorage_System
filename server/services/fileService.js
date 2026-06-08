@@ -178,7 +178,7 @@ const deleteFile = async (fileId, userId) => {
   file.deletedAt = new Date();
   await file.save();
 
-  return true;
+  return file;
 };
 
 export { deleteFile };

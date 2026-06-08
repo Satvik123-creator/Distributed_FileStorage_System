@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
+import { initNodeMetadata } from "./services/loadBalancerService.js";
 
 dotenv.config({
   path: "./.env",
@@ -9,6 +10,8 @@ dotenv.config({
 const startServer = async () => {
   try {
     await connectDB();
+
+    await initNodeMetadata();
 
     const port = process.env.PORT || 8000;
     app.listen(port, () => {
