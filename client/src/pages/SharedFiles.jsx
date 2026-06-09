@@ -96,66 +96,66 @@ const SharedFiles = () => {
   const fileCount = useMemo(() => files.length, [files]);
 
   return (
-    <div className="shared-files-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Shared with Me</p>
-          <h2>Shared Files</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Shared with Me</p>
+          <h2 className="text-xl font-bold text-gray-100">Shared Files</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Files that others have shared with you. Download based on your permissions.
           </p>
         </div>
-        <div className="hero-badge">{fileCount} Files</div>
+        <div className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm font-semibold rounded-lg">{fileCount} Files</div>
       </section>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
       {loading ? (
-        <div className="loading-state-card">
-          <div className="spinner" />
-          <p>Loading shared files...</p>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <div className="w-8 h-8 border-3 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Loading shared files...</p>
         </div>
       ) : files.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="files-shared-grid">
+        <div className="grid grid-cols-3 gap-4">
           {files.map((file) => {
             const isDownloading = downloadingId === file.fileId;
             const canDownload = file.permissions.includes("download") || file.permissions.includes("edit");
 
             return (
-              <article key={file.shareId} className="file-card">
-                <div className="file-card-top">
+              <article key={file.shareId} className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="file-label">File Name</p>
-                    <h3>{file.originalName}</h3>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">File Name</p>
+                    <h3 className="text-lg font-bold text-gray-100">{file.originalName}</h3>
                   </div>
-                  <span className="file-type-pill">{file.mimeType || "Unknown"}</span>
+                  <span className="px-2.5 py-1 bg-gray-800 text-gray-300 text-[11px] font-bold uppercase rounded-md">{file.mimeType || "Unknown"}</span>
                 </div>
 
-                <div className="file-meta-grid">
-                  <div>
-                    <span>File Size</span>
-                    <strong>{formatFileSize(file.fileSize)}</strong>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-gray-400">File Size</span>
+                    <strong className="text-gray-100">{formatFileSize(file.fileSize)}</strong>
                   </div>
-                  <div>
-                    <span>Shared Date</span>
-                    <strong>{file.sharedAt ? new Date(file.sharedAt).toLocaleString() : new Date(file.uploadedAt).toLocaleString()}</strong>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-gray-400">Shared Date</span>
+                    <strong className="text-gray-100">{file.sharedAt ? new Date(file.sharedAt).toLocaleString() : new Date(file.uploadedAt).toLocaleString()}</strong>
                   </div>
-                  <div>
-                    <span>Shared by</span>
-                    <strong>{file.sharedBy?.name || file.sharedBy?.email || "Unknown"}</strong>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-gray-400">Shared by</span>
+                    <strong className="text-gray-100">{file.sharedBy?.name || file.sharedBy?.email || "Unknown"}</strong>
                   </div>
-                  <div>
-                    <span>Permission</span>
-                    <strong>{file.permissions?.join(", ") || "view"}</strong>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-gray-400">Permission</span>
+                    <strong className="text-gray-100">{file.permissions?.join(", ") || "view"}</strong>
                   </div>
                 </div>
 
-                <div className="file-card-actions">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="file-action-button file-action-primary"
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
                     onClick={() => handleDownload(file)}
                     disabled={isDownloading || !canDownload}
                     title={!canDownload ? "No download permission" : ""}

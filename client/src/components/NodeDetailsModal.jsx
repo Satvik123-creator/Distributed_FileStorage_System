@@ -13,48 +13,36 @@ const NodeDetailsModal = ({ isOpen, node, onClose }) => {
   if (!isOpen || !node) return null;
 
   return (
-    <div className="modal-overlay" role="presentation" onClick={onClose}>
-      <div
-        className="modal-card node-details-modal"
-        role="dialog"
-        aria-modal="true"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="modal-header">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-sm p-6 w-full max-w-md grid gap-5" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="section-label">Node Details</p>
-            <h3>{node.nodeName}</h3>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Node Details</p>
+            <h3 className="text-lg font-bold text-gray-100 capitalize">{node.nodeName}</h3>
           </div>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={onClose}
-            aria-label="Close details modal"
-          >
-            ✕
-          </button>
+          <button type="button" className="text-gray-500 hover:text-gray-300 transition cursor-pointer text-lg leading-none" onClick={onClose} aria-label="Close details modal">✕</button>
         </div>
 
-        <div className="node-details-grid">
-          <div>
-            <span>Current Status</span>
-            <strong>{node.statusLabel}</strong>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-gray-800 border border-gray-700">
+            <span className="text-xs text-gray-400">Current Status</span>
+            <strong className="text-gray-100">{node.statusLabel}</strong>
           </div>
-          <div>
-            <span>Last Health Check</span>
-            <strong>{node.lastChecked}</strong>
+          <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-gray-800 border border-gray-700">
+            <span className="text-xs text-gray-400">Last Health Check</span>
+            <strong className="text-gray-100">{node.lastChecked}</strong>
           </div>
-          <div>
-            <span>Stored Files Count</span>
-            <strong>{node.storedFilesCount ?? "Not available"}</strong>
+          <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-gray-800 border border-gray-700">
+            <span className="text-xs text-gray-400">Stored Files Count</span>
+            <strong className="text-gray-100">{node.storedFilesCount ?? "Not available"}</strong>
           </div>
-          <div>
-            <span>Storage Used</span>
-            <strong>{node.storageUsed != null ? formatBytes(node.storageUsed) : "Not available"}</strong>
+          <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-gray-800 border border-gray-700">
+            <span className="text-xs text-gray-400">Storage Used</span>
+            <strong className="text-gray-100">{node.storageUsed != null ? formatBytes(node.storageUsed) : "Not available"}</strong>
           </div>
-          <div>
-            <span>Replica Information</span>
-            <strong>{node.replicaInfo || "Not available"}</strong>
+          <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-gray-800 border border-gray-700 col-span-2">
+            <span className="text-xs text-gray-400">Replica Information</span>
+            <strong className="text-gray-100">{node.replicaInfo || "Not available"}</strong>
           </div>
         </div>
       </div>

@@ -1,116 +1,131 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { FileText, Download, Eye } from "lucide-react";
 
 const formatFileSize = (size) => {
   if (!Number.isFinite(size)) return "Unknown";
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  if (size < 1024 * 1024 * 1024)
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 };
 
 const RecentFiles = React.memo(({ files, onDownload, onViewDetails }) => {
-  return (
-    <section className="dashboard-panel">
-      <div className="panel-header">
-        <div>
-          <p className="section-label">Recent Files</p>
-          <h3>Latest uploads</h3>
+  if (files.length === 0) {
+    return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
+      className="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm"
+    >
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+          <FileText className="w-4 h-4 text-gray-400" />
         </div>
-        <span>Newest first</span>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-100">Recent Files</h3>
+          <p className="text-xs text-gray-500">Latest uploads</p>
+        </div>
+      </div>
+      <p className="text-sm text-gray-500 text-center py-6">No files uploaded yet.</p>
+      </motion.section>
+    );
+  }
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
+      className="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+            <FileText className="w-4 h-4 text-gray-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-100">Recent Files</h3>
+            <p className="text-xs text-gray-500">Latest uploads</p>
+          </div>
+        </div>
+        <span className="text-xs text-gray-500">Newest first</span>
       </div>
 
-      <div className="dashboard-table-wrap">
-        <table className="dashboard-table">
+      <div className="overflow-x-auto">
+        <table className="w-full">
           <thead>
-            <tr>
-              <th>File Name</th>
-              <th>Upload Date</th>
-              <th>File Size</th>
-              <th>Actions</th>
+            <tr className="border-b border-gray-800">
+              <th className="pb-3 pr-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">File Name</th>
+              <th className="pb-3 pr-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Upload Date</th>
+              <th className="pb-3 pr-4 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">File Size</th>
+              <th className="pb-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {files.map((file) => (
-              <tr key={file.fileId}>
-                <td>
-                  <div className="table-primary-cell">
-                    <strong>{file.originalName}</strong>
-                    <span className="table-subtext">
-                      {file.mimeType || "Unknown type"}
-                    </span>
+            {files.map((file, idx) => (
+              <motion.tr
+                key={file.fileId}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: idx * 0.04 }}
+                className="border-b border-gray-800/50 last:border-b-0 hover:bg-gray-800/50 transition-colors group"
+              >
+                <td className="py-3 pr-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-100">{file.originalName}</span>
+                    <span className="text-xs text-gray-500">{file.mimeType || "Unknown type"}</span>
                   </div>
                 </td>
-                <td>{new Date(file.uploadedAt).toLocaleString()}</td>
-                <td>{formatFileSize(file.fileSize)}</td>
-                <td>
-                  <div className="table-action-group">
+                <td className="py-3 pr-4">
+                  <span className="text-sm text-gray-400">{new Date(file.uploadedAt).toLocaleString()}</span>
+                </td>
+                <td className="py-3 pr-4">
+                  <span className="text-sm text-gray-400">{formatFileSize(file.fileSize)}</span>
+                </td>
+                <td className="py-3">
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
-                      className="file-action-button file-action-primary"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                      onClick={() => onDownload(file)}
+                    >
+                      <Download className="w-3 h-3" />
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 text-gray-300 text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                      onClick={() => onViewDetails(file)}
+                    >
+                      <Eye className="w-3 h-3" />
+                      Details
+                    </button>
+                  </div>
+                  <div className="flex gap-2 opacity-100 group-hover:opacity-0 transition-opacity md:hidden">
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg cursor-pointer"
                       onClick={() => onDownload(file)}
                     >
                       Download
                     </button>
                     <button
                       type="button"
-                      className="file-action-button modal-cancel-button"
+                      className="px-3 py-1.5 bg-gray-800 text-gray-300 text-xs font-medium rounded-lg cursor-pointer"
                       onClick={() => onViewDetails(file)}
                     >
-                      View Details
+                      Details
                     </button>
                   </div>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      <div className="dashboard-mobile-cards">
-        {files.map((file) => (
-          <article key={file.fileId} className="dashboard-mobile-card">
-            <div className="file-card-top">
-              <div>
-                <p className="file-label">File Name</p>
-                <h3>{file.originalName}</h3>
-              </div>
-              <span className="file-type-pill">
-                {file.mimeType || "Unknown"}
-              </span>
-            </div>
-
-            <div className="file-meta-grid compact-grid">
-              <div>
-                <span>Upload Date</span>
-                <strong>{new Date(file.uploadedAt).toLocaleString()}</strong>
-              </div>
-              <div>
-                <span>File Size</span>
-                <strong>{formatFileSize(file.fileSize)}</strong>
-              </div>
-            </div>
-
-            <div className="file-card-actions">
-              <button
-                type="button"
-                className="file-action-button file-action-primary"
-                onClick={() => onDownload(file)}
-              >
-                Download
-              </button>
-              <button
-                type="button"
-                className="file-action-button modal-cancel-button"
-                onClick={() => onViewDetails(file)}
-              >
-                View Details
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+    </motion.section>
   );
 });
 

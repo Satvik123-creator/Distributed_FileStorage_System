@@ -37,21 +37,21 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-skeleton">
-        <div className="skeleton skeleton-hero" />
-        <div className="skeleton skeleton-panel" />
+      <div className="flex flex-col gap-4">
+        <div className="rounded-2xl bg-gray-200 animate-pulse h-24" />
+        <div className="rounded-2xl bg-gray-200 animate-pulse h-64" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="dashboard-error-state">
-        <div className="error-card">
-          <p className="section-label">Error</p>
-          <h2>Could not load profile</h2>
-          <p>{error}</p>
-          <button type="button" className="file-action-button file-action-primary" onClick={fetchStorageInfo}>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-lg p-7 border border-black/8 rounded-2xl bg-white/90 shadow-card">
+          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Error</p>
+          <h2 className="text-xl font-bold mt-1 text-text">Could not load profile</h2>
+          <p className="text-sm text-muted mt-2">{error}</p>
+          <button type="button" className="mt-4 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer" onClick={fetchStorageInfo}>
             Retry
           </button>
         </div>
@@ -60,37 +60,37 @@ const Profile = () => {
   }
 
   return (
-    <div className="profile-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-7 border border-black/8 rounded-2xl bg-white/90 shadow-card">
         <div>
-          <p className="section-label">Account</p>
-          <h2>Profile</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Account</p>
+          <h2 className="text-xl font-bold text-text">Profile</h2>
+          <p className="text-sm text-muted max-w-[760px]">
             View your account details and storage quota usage.
           </p>
         </div>
       </section>
 
-      <section className="profile-grid">
-        <div className="profile-info-card">
-          <div className="panel-header">
+      <section className="grid grid-cols-2 gap-4">
+        <div className="p-5.5 border border-black/8 rounded-2xl bg-white/90 shadow-card grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Account</p>
-              <h3>User details</h3>
+              <p className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">Account</p>
+              <h3 className="text-lg font-bold text-text">User details</h3>
             </div>
           </div>
-          <div className="profile-info-rows">
-            <div className="profile-row">
-              <span>Name</span>
-              <strong>{user?.name || "N/A"}</strong>
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between py-2 px-3 border-b border-black/6 text-sm">
+              <span className="text-muted">Name</span>
+              <strong className="text-text">{user?.name || "N/A"}</strong>
             </div>
-            <div className="profile-row">
-              <span>Email</span>
-              <strong>{user?.email || "N/A"}</strong>
+            <div className="flex items-center justify-between py-2 px-3 border-b border-black/6 text-sm">
+              <span className="text-muted">Email</span>
+              <strong className="text-text">{user?.email || "N/A"}</strong>
             </div>
-            <div className="profile-row">
-              <span>Member since</span>
-              <strong>{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</strong>
+            <div className="flex items-center justify-between py-2 px-3 text-sm">
+              <span className="text-muted">Member since</span>
+              <strong className="text-text">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</strong>
             </div>
           </div>
         </div>

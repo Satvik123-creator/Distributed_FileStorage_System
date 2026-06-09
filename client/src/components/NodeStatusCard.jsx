@@ -10,10 +10,18 @@ const formatBytes = (bytes) => {
 };
 
 const statusMeta = {
-  healthy: { label: "Healthy", className: "status-healthy", icon: "●" },
-  warning: { label: "Warning", className: "status-warning", icon: "●" },
-  offline: { label: "Offline", className: "status-offline", icon: "●" },
-  unknown: { label: "Unknown", className: "status-unknown", icon: "●" },
+  healthy: { label: "Healthy", icon: "●" },
+  warning: { label: "Warning", icon: "●" },
+  offline: { label: "Offline", icon: "●" },
+  unknown: { label: "Unknown", icon: "●" },
+};
+
+const statusColors = (status) => {
+  const s = String(status || "unknown").toLowerCase();
+  if (s === "healthy") return "bg-emerald-900/30 text-emerald-400";
+  if (s === "warning") return "bg-amber-900/30 text-amber-400";
+  if (s === "offline") return "bg-red-900/30 text-red-400";
+  return "bg-gray-800 text-gray-400";
 };
 
 const NodeStatusCard = ({
@@ -31,39 +39,38 @@ const NodeStatusCard = ({
   return (
     <button
       type="button"
-      className={`node-status-card ${selected ? "node-status-card-selected" : ""}`}
+      className={`flex flex-col gap-4 p-5 border border-gray-800 rounded-xl bg-gray-900 shadow-sm cursor-pointer text-left transition-all hover:border-gray-600 ${selected ? "border-gray-600 ring-2 ring-gray-700/50" : ""}`}
       onClick={onClick}
     >
-      <div className="node-status-header">
+      <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="section-label">Storage Node</p>
-          <h3>{nodeName}</h3>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Storage Node</p>
+        <h3 className="text-lg font-bold text-gray-100 capitalize">{nodeName}</h3>
         </div>
-        <span className={`status-pill ${meta.className}`}>
-          <span className="status-dot">{meta.icon}</span>
+        <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${statusColors(status)}`}>
           {meta.label}
         </span>
       </div>
 
-      <div className="node-status-meta">
-        <div>
-          <span>Current Status</span>
-          <strong>{meta.label}</strong>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Current Status</span>
+          <strong className="text-gray-100">{meta.label}</strong>
         </div>
-        <div>
-          <span>Last Checked</span>
-          <strong>{lastChecked}</strong>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Last Checked</span>
+          <strong className="text-gray-100">{lastChecked}</strong>
         </div>
       </div>
 
-      <div className="node-status-meta">
-        <div>
-          <span>Stored Files</span>
-          <strong>{storedFilesCount ?? "N/A"}</strong>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Stored Files</span>
+          <strong className="text-gray-100">{storedFilesCount ?? "N/A"}</strong>
         </div>
-        <div>
-          <span>Storage Used</span>
-          <strong>{storageUsed != null ? formatBytes(storageUsed) : "N/A"}</strong>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Storage Used</span>
+          <strong className="text-gray-100">{storageUsed != null ? formatBytes(storageUsed) : "N/A"}</strong>
         </div>
       </div>
     </button>

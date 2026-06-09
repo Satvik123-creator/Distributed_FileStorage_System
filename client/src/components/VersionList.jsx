@@ -12,11 +12,11 @@ const VersionList = React.memo(({
   restoring,
 }) => {
   if (versions.length === 0) {
-    return <p className="empty-version-message">No versions available.</p>;
+    return <p className="text-center text-muted text-sm py-6">No versions available.</p>;
   }
 
   return (
-    <div className="version-list">
+    <div className="flex flex-col gap-3">
       {versions.map((v) => (
         <VersionCard
           key={v.fileId}

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { LayoutGrid, List } from "lucide-react";
 import fileService from "../services/fileService.js";
 import FileCard from "../components/FileCard.jsx";
 import FileTable from "../components/FileTable.jsx";
@@ -13,25 +15,62 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const getFriendlyError = (error) => {
   if (!error) return "Something went wrong.";
-
   if (error.response?.status === 401 || error.response?.status === 403) {
     return "Your session has expired. Please log in again.";
   }
-
   if (error.response?.status === 404) {
     return error.response?.data?.message || "File not found.";
   }
-
   if (error.response?.data?.message) {
     return error.response.data.message;
   }
-
   if (error.message === "Network Error") {
     return "Unable to connect to the server. Please try again later.";
   }
-
   return "We could not complete that action. Please try again.";
 };
+
+const SkeletonGrid = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <div key={i} className="rounded-xl border border-gray-800 bg-gray-900 p-4 animate-pulse">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gray-800 flex-shrink-0" />
+          <div className="flex-1 space-y-2.5">
+            <div className="h-4 bg-gray-800 rounded w-3/4" />
+            <div className="h-3 bg-gray-800 rounded w-1/2" />
+          </div>
+        </div>
+        <div className="flex gap-1.5 mt-3">
+          <div className="h-5 bg-gray-800 rounded w-16" />
+          <div className="h-5 bg-gray-800 rounded w-16" />
+        </div>
+        <div className="flex gap-2 mt-4 pt-3 border-t border-gray-800">
+          <div className="h-8 bg-gray-800 rounded-lg flex-1" />
+          <div className="h-8 bg-gray-800 rounded-lg flex-1" />
+          <div className="h-8 bg-gray-800 rounded-lg w-8" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const SkeletonTable = () => (
+  <div className="rounded-xl border border-gray-800 bg-gray-900 animate-pulse">
+    <div className="p-4 space-y-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-4">
+          <div className="w-9 h-9 rounded-lg bg-gray-800 flex-shrink-0" />
+          <div className="h-4 bg-gray-800 rounded w-1/4" />
+          <div className="h-4 bg-gray-800 rounded w-16 ml-auto" />
+          <div className="h-4 bg-gray-800 rounded w-12" />
+          <div className="h-4 bg-gray-800 rounded w-20" />
+          <div className="h-4 bg-gray-800 rounded w-16" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const MyFiles = () => {
   const navigate = useNavigate();
@@ -39,6 +78,7 @@ const MyFiles = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [deletingId, setDeletingId] = useState(null);
@@ -237,45 +277,63 @@ const MyFiles = () => {
   const fileCount = useMemo(() => files.length, [files]);
 
   return (
-    <div className="my-files-page">
-      <section className="hero-panel compact-hero">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="flex flex-col gap-5"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="section-label">File Manager</p>
-          <h2>My Files</h2>
-          <p className="hero-description">
-            Review uploaded files, download them to your device, or remove them
-            from storage.
+          <h1 className="text-xl font-bold text-gray-100">My Files</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage your uploaded files
           </p>
         </div>
-        <div className="hero-badge">{fileCount} Files</div>
-      </section>
-
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
-
-      {loading ? (
-        <div className="loading-state-card">
-          <div className="spinner" />
-          <p>Loading your files...</p>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400 font-medium">{fileCount} file{fileCount !== 1 ? "s" : ""}</span>
+          <div className="flex items-center gap-0.5 p-0.5 bg-gray-800 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                viewMode === "grid" ? "bg-gray-900 text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-300"
+              }`}
+              title="Grid view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                viewMode === "list" ? "bg-gray-900 text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-300"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">
+          {error}
+        </div>
+      )}
+
+      {/* Content */}
+      {loading ? (
+        viewMode === "grid" ? <SkeletonGrid /> : <SkeletonTable />
       ) : files.length === 0 ? (
         <EmptyState />
       ) : (
         <>
-          <div className="desktop-only-view">
-            <FileTable
-              files={files}
-              onDownload={handleDownload}
-              onDelete={handleOpenDeleteModal}
-              onShowVersions={handleShowVersions}
-              onShare={handleOpenShareModal}
-              downloading={downloadingId}
-              downloadProgress={downloadProgress}
-              deleting={deletingId}
-            />
-          </div>
-
-          <div className="mobile-only-view">
-            <div className="files-card-stack">
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {files.map((file) => (
                 <FileCard
                   key={file.fileId}
@@ -290,10 +348,22 @@ const MyFiles = () => {
                 />
               ))}
             </div>
-          </div>
+          ) : (
+            <FileTable
+              files={files}
+              onDownload={handleDownload}
+              onDelete={handleOpenDeleteModal}
+              onShowVersions={handleShowVersions}
+              onShare={handleOpenShareModal}
+              downloading={downloadingId}
+              downloadProgress={downloadProgress}
+              deleting={deletingId}
+            />
+          )}
         </>
       )}
 
+      {/* Modals */}
       <VersionHistoryModal
         isOpen={versionsModal.open}
         versions={versionsModal.versions}
@@ -322,7 +392,7 @@ const MyFiles = () => {
         onDelete={handleConfirmDelete}
         loading={deletingId === modalFile?.fileId}
       />
-    </div>
+    </motion.div>
   );
 };
 

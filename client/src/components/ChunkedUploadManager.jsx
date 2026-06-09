@@ -1,4 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  File,
+  HardDrive,
+  Layers,
+  Lock,
+  Server,
+  Pause,
+  Play,
+  RotateCcw,
+  X,
+  CheckCircle2,
+  Loader2,
+  AlertCircle,
+  Upload,
+} from "lucide-react";
 import chunkUploadService from "../services/chunkUploadService.js";
 
 const CHUNK_SIZE_MB = 5;
@@ -53,7 +69,6 @@ const ChunkedUploadManager = ({ file, onSuccess, onCancel }) => {
         try {
           hash = await chunkUploadService.calculateSHA256(chunkList[i].blob);
         } catch {
-          // hash not supported
         }
 
         await chunkUploadService.uploadChunk(id, i, chunkList[i].blob, hash);
@@ -104,7 +119,6 @@ const ChunkedUploadManager = ({ file, onSuccess, onCancel }) => {
       if (!mountedRef.current) return;
       setStep("uploading");
 
-      // Wait for state to settle before starting loop
       setTimeout(() => {
         if (mountedRef.current && !pausedRef.current) {
           setChunks((current) => {
@@ -168,174 +182,219 @@ const ChunkedUploadManager = ({ file, onSuccess, onCancel }) => {
       try {
         await chunkUploadService.cancelUpload(uploadId);
       } catch {
-        // best effort
       }
     }
     if (onCancel) onCancel();
   };
 
-  const renderChunkDots = () => {
-    if (chunks.length === 0) return null;
-    return (
-      <div className="chunk-dots-track">
-        {chunks.map((c, i) => (
-          <span
-            key={i}
-            className={`chunk-dot chunk-dot-${c.status}`}
-            title={`Chunk ${i + 1}: ${c.status}`}
-          />
-        ))}
-      </div>
-    );
-  };
-
+  const totalChunks = chunks.length;
   const doneCount = countStatus("done");
   const failedCount = countStatus("failed");
-  const totalChunks = chunks.length;
+
+  const isUploading = step === "uploading";
+  const isPaused = step === "paused";
+  const isError = step === "error";
+  const isDone = step === "done";
+  const isFinalizing = step === "finalizing";
+  const isPreparing = step === "preparing";
 
   return (
-    <div className="chunked-upload-manager">
-      <div className="chunked-upload-header">
-        <div>
-          <p className="section-label">Chunked Upload</p>
-          <h3>{file?.name || "Large File"}</h3>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl border border-gray-800 bg-gray-900 shadow-sm"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-800">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0">
+            <File className="w-5 h-5 text-gray-400" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-500">Chunked Upload</p>
+            <h3 className="text-base font-bold text-gray-100 truncate">{file?.name || "Large File"}</h3>
+          </div>
         </div>
-        {step !== "uploading" && step !== "preparing" && (
-          <button type="button" className="icon-button" onClick={handleCancel} aria-label="Cancel">
-            ✕
+        {!isUploading && !isPreparing && (
+          <button type="button" className="p-1.5 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer flex-shrink-0" onClick={handleCancel} aria-label="Cancel">
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="mx-4 mt-3 px-3 py-2 rounded-lg text-xs bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
-      <div className="chunked-upload-info">
-        <div className="info-row">
-          <span>File size</span>
-          <strong>{(file.size / (1024 * 1024)).toFixed(1)} MB</strong>
+      {/* Info grid */}
+      <div className="p-4 pb-2 grid grid-cols-2 gap-2">
+        <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <HardDrive className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">File Size</p>
+            <p className="text-xs font-semibold text-gray-100">{(file.size / (1024 * 1024)).toFixed(1)} MB</p>
+          </div>
         </div>
-        <div className="info-row">
-          <span>Chunk size</span>
-          <strong>{CHUNK_SIZE_MB} MB</strong>
+        <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <Layers className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Chunk Size</p>
+            <p className="text-xs font-semibold text-gray-100">{CHUNK_SIZE_MB} MB</p>
+          </div>
         </div>
-        <div className="info-row">
-          <span>Total chunks</span>
-          <strong>{totalChunks || "—"}</strong>
+        <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <Lock className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Encryption</p>
+            <p className="text-xs font-semibold text-emerald-400">AES-256-GCM</p>
+          </div>
         </div>
-        <div className="info-row">
-          <span>Status</span>
-          <strong className="status-badge">{step}</strong>
+        <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <Server className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <div>
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Replication</p>
+            <p className="text-xs font-semibold text-gray-300">On write</p>
+          </div>
         </div>
       </div>
 
+      {/* Progress */}
       {step !== "idle" && totalChunks > 0 && (
-        <>
-          <div className="chunk-progress-section">
-            <div className="progress-bar-track chunk-progress-track">
-              <div
-                className="progress-bar-fill"
-                style={{ width: `${overallProgress}%` }}
-              />
+        <div className="px-4 pb-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-100" />}
+              {isPaused && <Pause className="w-3.5 h-3.5 text-gray-400" />}
+              {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+              {isError && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
+              {isPreparing ? "Preparing..." :
+               isFinalizing ? "Finalizing..." :
+               isDone ? "Upload complete" :
+               isPaused ? `Paused at chunk ${currentChunk}/${totalChunks}` :
+               isError ? "Upload failed" :
+               `Uploading chunk ${currentChunk} of ${totalChunks}`}
             </div>
-            <div className="chunk-progress-text">
-              {step === "finalizing"
-                ? "Reassembling file..."
-                : step === "done"
-                  ? "Upload complete"
-                  : `Uploading chunk ${currentChunk} of ${totalChunks}`}
-            </div>
-            <div className="chunk-progress-pct">{overallProgress}%</div>
+            <span className="text-sm font-semibold text-gray-100">{overallProgress}%</span>
           </div>
-
-          <div className="chunk-progress-detailed">
+          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${overallProgress}%` }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className={`h-full rounded-full ${isDone ? "bg-emerald-500" : isError ? "bg-red-500" : "bg-gray-100"}`}
+            />
+          </div>
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500">
             <span>Chunk {currentChunk} / {totalChunks}</span>
-            <div className="chunk-done-indicator">
-              <span className="done-count">{doneCount}</span>
-              <span className="done-sep">/</span>
-              <span className="total-count">{totalChunks}</span>
-              {failedCount > 0 && (
-                <span className="failed-count">({failedCount} failed)</span>
-              )}
-            </div>
+            {totalChunks > 0 && (
+              <>
+                <span>·</span>
+                <span>{doneCount} / {totalChunks} done</span>
+              </>
+            )}
+            {failedCount > 0 && (
+              <span className="text-red-400">({failedCount} failed)</span>
+            )}
           </div>
-
-          {renderChunkDots()}
-        </>
+        </div>
       )}
 
-      {step === "idle" && (
-        <button
-          type="button"
-          className="btn btn-primary upload-start-btn"
-          onClick={startUpload}
-        >
-          Start Upload
-        </button>
+      {/* Chunk grid */}
+      {totalChunks > 0 && (
+        <div className="px-4 pb-3">
+          <div className="grid grid-cols-10 sm:grid-cols-16 gap-1">
+            {chunks.map((c, i) => (
+              <div
+                key={i}
+                className={`aspect-square rounded-md flex items-center justify-center text-[9px] font-medium transition-colors ${
+                  c.status === "done" ? "bg-emerald-900/40 text-emerald-400" :
+                  c.status === "uploading" ? "bg-blue-900/40 text-blue-400" :
+                  c.status === "failed" ? "bg-red-900/40 text-red-400" :
+                  "bg-gray-800 text-gray-500"
+                }`}
+                title={`Chunk ${i + 1}: ${c.status}`}
+              >
+                {c.status === "done" ? <CheckCircle2 className="w-3 h-3" /> :
+                 c.status === "uploading" ? <Loader2 className="w-3 h-3 animate-spin" /> :
+                 c.status === "failed" ? <AlertCircle className="w-3 h-3" /> :
+                 i + 1}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      <div className="chunked-upload-actions">
-        {step === "uploading" && (
+      {/* Actions */}
+      <div className="flex items-center gap-2 px-4 pb-4">
+        {step === "idle" && (
           <button
             type="button"
-            className="file-action-button file-action-secondary"
-            onClick={handlePause}
+            onClick={startUpload}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
           >
+            <Upload className="w-4 h-4" />
+            Start Upload
+          </button>
+        )}
+        {isUploading && (
+          <button
+            type="button"
+            onClick={handlePause}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+          >
+            <Pause className="w-4 h-4" />
             Pause
           </button>
         )}
-        {step === "paused" && (
+        {isPaused && (
           <button
             type="button"
-            className="file-action-button file-action-primary"
             onClick={handleResume}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
           >
+            <Play className="w-4 h-4" />
             Resume
           </button>
         )}
-        {step === "error" && failedCount > 0 && (
+        {isError && failedCount > 0 && (
           <>
             <button
               type="button"
-              className="file-action-button file-action-primary"
               onClick={handleRetryFailed}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
             >
-              Retry Failed {failedCount > 1 ? `(${failedCount})` : "Chunk"}
+              <RotateCcw className="w-4 h-4" />
+              Retry {failedCount > 1 ? `(${failedCount})` : "Failed"}
             </button>
             <button
               type="button"
-              className="file-action-button file-action-danger"
               onClick={handleCancel}
+              className="inline-flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-red-400 text-sm font-medium rounded-lg hover:bg-red-900/30 transition-colors cursor-pointer"
             >
-              Cancel Upload
+              Cancel
             </button>
           </>
         )}
-        {(step === "done" || step === "finalizing") && (
+        {(isDone || isFinalizing) && (
           <button
             type="button"
-            className="file-action-button file-action-primary"
             onClick={handleCancel}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors cursor-pointer"
           >
-            {step === "done" ? "Done" : "Close"}
+            <CheckCircle2 className="w-4 h-4" />
+            {isDone ? "Done" : "Close"}
           </button>
         )}
       </div>
 
-      <div className="chunk-legend">
-        <span className="chunk-legend-item">
-          <span className="chunk-dot chunk-dot-done" /> Done
-        </span>
-        <span className="chunk-legend-item">
-          <span className="chunk-dot chunk-dot-uploading" /> Uploading
-        </span>
-        <span className="chunk-legend-item">
-          <span className="chunk-dot chunk-dot-pending" /> Pending
-        </span>
-        <span className="chunk-legend-item">
-          <span className="chunk-dot chunk-dot-failed" /> Failed
-        </span>
-      </div>
-    </div>
+      {/* Legend */}
+      {totalChunks > 0 && (
+        <div className="flex items-center gap-3 px-4 pb-4 text-xs text-gray-500">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Done</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-100 inline-block" /> Uploading</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-600 inline-block" /> Pending</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Failed</span>
+        </div>
+      )}
+    </motion.div>
   );
 };
 

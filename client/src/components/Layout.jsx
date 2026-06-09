@@ -10,20 +10,13 @@ const Layout = () => {
   const toggleSidebar = () => setSidebarOpen((value) => !value);
 
   return (
-    <div className="app-shell">
+    <div className="min-h-screen flex flex-col bg-gray-950">
       <Navbar onMenuToggle={toggleSidebar} />
 
-      <div className="layout-body">
-        {sidebarOpen && (
-          <div
-            className="sidebar-overlay"
-            onClick={closeSidebar}
-            role="presentation"
-          />
-        )}
+      <div className="flex flex-1">
         <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
-        <main className="content-area">
+        <main className="flex-1 p-6 overflow-auto min-w-0">
           <Outlet />
         </main>
       </div>

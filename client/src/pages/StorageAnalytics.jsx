@@ -132,14 +132,14 @@ const StorageAnalytics = () => {
 
   if (loading && nodes.length === 0) {
     return (
-      <div className="dashboard-skeleton">
-        <div className="skeleton skeleton-hero" />
-        <div className="skeleton-grid">
-          {[1, 2, 3].map((i) => <div key={i} className="skeleton skeleton-card" />)}
+      <div className="flex flex-col gap-5">
+        <div className="rounded-xl bg-gray-800 animate-pulse h-24" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <div key={i} className="rounded-xl bg-gray-800 animate-pulse h-32" />)}
         </div>
-        <div className="skeleton-grid two-col">
-          <div className="skeleton skeleton-panel" />
-          <div className="skeleton skeleton-panel" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl bg-gray-800 animate-pulse h-64" />
+          <div className="rounded-xl bg-gray-800 animate-pulse h-64" />
         </div>
       </div>
     );
@@ -147,12 +147,12 @@ const StorageAnalytics = () => {
 
   if (error && nodes.length === 0) {
     return (
-      <div className="dashboard-error-state">
-        <div className="error-card">
-          <p className="section-label">Storage Analytics Error</p>
-          <h2>Could not load analytics</h2>
-          <p>{error}</p>
-          <button type="button" className="file-action-button file-action-primary" onClick={() => setRetryNonce((v) => v + 1)}>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-lg p-7 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Storage Analytics Error</p>
+          <h2 className="text-xl font-bold mt-1 text-gray-100">Could not load analytics</h2>
+          <p className="text-sm text-gray-400 mt-2">{error}</p>
+          <button type="button" className="mt-4 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer" onClick={() => setRetryNonce((v) => v + 1)}>
             Retry
           </button>
         </div>
@@ -160,119 +160,115 @@ const StorageAnalytics = () => {
     );
   }
 
+  const statusPill = (status) => {
+    const s = String(status || "unknown").toLowerCase();
+    if (s === "healthy") return "bg-emerald-900/30 text-emerald-400";
+    if (s === "offline") return "bg-red-900/30 text-red-400";
+    if (s === "warning") return "bg-amber-900/30 text-amber-400";
+    return "bg-gray-800 text-gray-400";
+  };
+
   return (
-    <div className="storage-analytics-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Analytics</p>
-          <h2>Storage Analytics</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Analytics</p>
+          <h2 className="text-xl font-bold text-gray-100">Storage Analytics</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Node utilization, load distribution, and storage growth trends across your distributed storage cluster.
           </p>
         </div>
-        <div className="hero-actions-group">
-          <span className="status-pill status-healthy">Auto-refresh 30s</span>
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 bg-emerald-900/30 text-emerald-400 text-[11px] font-bold rounded-full">Auto-refresh 30s</span>
         </div>
       </section>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
-      <section className="storage-analytics-section">
-        <div className="panel-header">
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="section-label">Resource Usage</p>
-            <h3>Node Utilization</h3>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Resource Usage</p>
+            <h3 className="text-lg font-bold text-gray-100">Node Utilization</h3>
           </div>
-          <span>Per-node breakdown</span>
+          <span className="text-sm text-gray-400">Per-node breakdown</span>
         </div>
-        <div className="analytics-node-grid">
+        <div className="grid grid-cols-3 gap-4">
           {nodesWithUtil.map((node) => (
             <button
               key={node.nodeName}
               type="button"
-              className="analytics-node-card"
+              className="flex flex-col gap-3 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm text-left cursor-pointer hover:border-gray-600 transition"
               onClick={() => setSelectedNode({
                 ...node,
                 statusLabel: node.statusLabel,
               })}
             >
-              <div className="analytics-node-header">
-                <h4>{node.nodeName}</h4>
-                <span className={`status-pill status-${node.status}`}>{node.statusLabel.toUpperCase()}</span>
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-base font-bold text-gray-100 capitalize">{node.nodeName}</h4>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${statusPill(node.status)}`}>{node.statusLabel.toUpperCase()}</span>
               </div>
-              <div className="analytics-node-metrics">
-                <div className="analytics-metric">
-                  <span>Storage Used</span>
-                  <strong>{formatBytes(node.storageUsed)}</strong>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Storage Used</span>
+                  <strong className="text-gray-100">{formatBytes(node.storageUsed)}</strong>
                 </div>
-                <div className="analytics-metric">
-                  <span>Total Files</span>
-                  <strong>{node.storedFilesCount}</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Total Files</span>
+                  <strong className="text-gray-100">{node.storedFilesCount}</strong>
                 </div>
-                <div className="analytics-metric">
-                  <span>Utilization</span>
-                  <strong>{node.utilizationPct}%</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Utilization</span>
+                  <strong className="text-gray-100">{node.utilizationPct}%</strong>
                 </div>
               </div>
-              <div className="analytics-util-bar-wrap">
-                <div
-                  className="analytics-util-bar-fill"
-                  style={{ width: `${node.barPct}%`, background: node.color }}
-                />
+              <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${node.barPct}%`, background: node.color }} />
               </div>
-              <span className="analytics-util-caption">{node.barPct}% relative usage</span>
+              <span className="text-xs text-gray-400">{node.barPct}% relative usage</span>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="dashboard-main-grid">
-        <section className="dashboard-panel">
-          <div className="panel-header">
+      <section className="grid grid-cols-2 gap-4">
+        <section className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Distribution</p>
-              <h3>Load Distribution</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Distribution</p>
+              <h3 className="text-lg font-bold text-gray-100">Load Distribution</h3>
             </div>
-            <span>File spread</span>
+            <span className="text-sm text-gray-400">File spread</span>
           </div>
-          <div className="load-distribution-chart">
+          <div className="flex flex-col gap-3">
             {loadDistribution.map((item) => (
-              <div key={item.nodeName} className="load-dist-row">
-                <span className="load-dist-label">{item.nodeName}</span>
-                <div className="load-dist-bar-wrap">
-                  <div
-                    className="load-dist-bar-fill"
-                    style={{ width: `${item.pct}%`, background: item.color }}
-                  />
+              <div key={item.nodeName} className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-gray-100 w-14 capitalize">{item.nodeName}</span>
+                <div className="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${item.pct}%`, background: item.color }} />
                 </div>
-                <span className="load-dist-pct">{item.pct}%</span>
+                <span className="text-sm font-bold text-gray-100 w-12 text-right">{item.pct}%</span>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="dashboard-panel">
-          <div className="panel-header">
+        <section className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Trends</p>
-              <h3>Storage Growth</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Trends</p>
+              <h3 className="text-lg font-bold text-gray-100">Storage Growth</h3>
             </div>
-            <span>30 days</span>
+            <span className="text-sm text-gray-400">30 days</span>
           </div>
           {growthChart.length === 0 ? (
-            <p className="no-data-message">No growth data yet. Snapshots will be recorded automatically.</p>
+            <p className="text-sm text-gray-400 text-center py-6">No growth data yet. Snapshots will be recorded automatically.</p>
           ) : (
-            <div className="growth-chart">
+            <div className="flex items-end gap-1 h-32">
               {growthChart.map((entry) => (
-                <div key={entry.date} className="growth-bar-col">
-                  <div className="growth-bar-wrap">
-                    <div
-                      className="growth-bar-fill"
-                      style={{ height: `${entry.pct}%` }}
-                      title={`${formatBytes(entry.value)}`}
-                    />
-                  </div>
-                  <span className="growth-bar-label">{entry.date}</span>
+                <div key={entry.date} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                  <div className="w-full rounded-sm bg-gray-400 transition-all" style={{ height: `${entry.pct}%` }} title={`${formatBytes(entry.value)}`} />
+                  <span className="text-[10px] text-gray-500 truncate w-full text-center">{entry.date}</span>
                 </div>
               ))}
             </div>
@@ -280,36 +276,36 @@ const StorageAnalytics = () => {
         </section>
       </section>
 
-      <section className="dashboard-panel storage-analytics-full">
-        <div className="panel-header">
+      <section className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <p className="section-label">Details</p>
-            <h3>Node Details</h3>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Details</p>
+            <h3 className="text-lg font-bold text-gray-100">Node Details</h3>
           </div>
-          <span>Click a node above to view details</span>
+          <span className="text-sm text-gray-400">Click a node above to view details</span>
         </div>
-        <div className="analytics-node-grid compact">
+        <div className="grid grid-cols-3 gap-4">
           {nodesWithUtil.map((node) => (
             <button
               key={node.nodeName}
               type="button"
-              className="analytics-detail-card"
+              className="flex flex-col p-4 rounded-xl border border-gray-800 bg-gray-800 text-left cursor-pointer hover:border-gray-600 transition"
               onClick={() => setSelectedNode({
                 ...node,
                 statusLabel: node.statusLabel,
               })}
             >
-              <div className="analytics-detail-row">
-                <span>Files Count</span>
-                <strong>{node.storedFilesCount}</strong>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-400">Files Count</span>
+                <strong className="text-gray-100">{node.storedFilesCount}</strong>
               </div>
-              <div className="analytics-detail-row">
-                <span>Storage Used</span>
-                <strong>{formatBytes(node.storageUsed)}</strong>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-400">Storage Used</span>
+                <strong className="text-gray-100">{formatBytes(node.storageUsed)}</strong>
               </div>
-              <div className="analytics-detail-row">
-                <span>Last Update</span>
-                <strong>{node.lastChecked}</strong>
+              <div className="flex items-center justify-between text-sm py-2">
+                <span className="text-gray-400">Last Update</span>
+                <strong className="text-gray-100">{node.lastChecked}</strong>
               </div>
             </button>
           ))}

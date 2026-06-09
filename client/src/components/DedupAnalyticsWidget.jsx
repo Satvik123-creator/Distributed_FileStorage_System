@@ -1,6 +1,8 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { APP_PATHS } from "../routes/appRoutes.js";
+import { Layers, ArrowRight } from "lucide-react";
 
 const formatBytes = (bytes) => {
   if (!Number.isFinite(bytes)) return "0 B";
@@ -12,88 +14,67 @@ const formatBytes = (bytes) => {
 
 const DedupAnalyticsWidget = React.memo(({ dedupStats }) => {
   const navigate = useNavigate();
-
-  const {
-    totalLogicalFiles = 0,
-    totalPhysicalFiles = 0,
-    logicalBytes = 0,
-    physicalBytes = 0,
-    savingsBytes = 0,
-    savingsPercent = 0,
-  } = dedupStats || {};
-
+  const { totalLogicalFiles = 0, totalPhysicalFiles = 0, logicalBytes = 0, physicalBytes = 0, savingsBytes = 0, savingsPercent = 0 } = dedupStats || {};
   const duplicatesPrevented = Math.max(0, totalLogicalFiles - totalPhysicalFiles);
 
   return (
-    <section className="dashboard-panel dedup-analytics-widget">
-      <div className="panel-header">
-        <div>
-          <p className="section-label">Deduplication</p>
-          <h3>Storage savings</h3>
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.25, ease: "easeOut" }}
+      className="rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-sm"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+            <Layers className="w-4 h-4 text-gray-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-100">Deduplication</h3>
+            <p className="text-xs text-gray-500">Storage savings</p>
+          </div>
         </div>
         <button
           type="button"
-          className="file-action-button file-action-primary"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-100 transition-colors cursor-pointer"
           onClick={() => navigate(APP_PATHS.storageAnalytics)}
         >
-          View Details
+          Details
+          <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 
-      <div className="dedup-savings-card">
-        <div className="dedup-savings-header">
-          <span className="dedup-savings-label">Storage Saved</span>
-          <strong className="dedup-savings-value">{formatBytes(savingsBytes)}</strong>
-          <span className="dedup-savings-pct">({savingsPercent}%)</span>
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex flex-col gap-2.5 mb-3">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Storage Saved</span>
+          <span className="text-xs text-gray-500">({savingsPercent}%)</span>
         </div>
-        <div className="dedup-progress-track">
-          <div
-            className="dedup-progress-fill"
-            style={{ width: `${Math.min(savingsPercent, 100)}%` }}
+        <strong className="text-xl font-semibold text-gray-100">{formatBytes(savingsBytes)}</strong>
+        <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(savingsPercent, 100)}%` }}
+            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            className="h-full rounded-full bg-gray-300"
           />
         </div>
       </div>
 
-      <div className="dedup-stats-grid">
-        <div className="dedup-stat">
-          <span>Total Uploads</span>
-          <strong>{totalLogicalFiles}</strong>
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Total Uploads</span>
+          <strong className="text-sm font-semibold text-gray-100">{totalLogicalFiles}</strong>
         </div>
-        <div className="dedup-stat">
-          <span>Actual Stored Files</span>
-          <strong>{totalPhysicalFiles}</strong>
+        <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+          <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Stored</span>
+          <strong className="text-sm font-semibold text-gray-100">{totalPhysicalFiles}</strong>
         </div>
-        <div className="dedup-stat">
-          <span>Duplicate Files Prevented</span>
-          <strong>{duplicatesPrevented}</strong>
-        </div>
-      </div>
-
-      <div className="dedup-bar-section">
-        <div className="dedup-bar-labels">
-          <span>Logical ({formatBytes(logicalBytes)})</span>
-          <span>Physical ({formatBytes(physicalBytes)})</span>
-        </div>
-        <div className="dedup-bar-stack">
-          <div
-            className="dedup-bar-segment dedup-bar-physical"
-            style={{
-              width: `${physicalBytes > 0 && logicalBytes > 0 ? (physicalBytes / logicalBytes) * 100 : 0}%`,
-            }}
-          />
-          <div
-            className="dedup-bar-segment dedup-bar-savings"
-            style={{
-              width: `${savingsBytes > 0 && logicalBytes > 0 ? (savingsBytes / logicalBytes) * 100 : 0}%`,
-            }}
-          />
-        </div>
-        <div className="dedup-bar-legend">
-          <span className="dedup-legend-physical">Unique data</span>
-          <span className="dedup-legend-savings">Saved by dedup</span>
+        <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Dup Prevented</span>
+          <strong className="text-sm font-semibold text-gray-100">{duplicatesPrevented}</strong>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 });
 

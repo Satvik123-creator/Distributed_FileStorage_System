@@ -102,76 +102,76 @@ const SharedByMe = () => {
   const shareCount = useMemo(() => shares.length, [shares]);
 
   return (
-    <div className="shared-files-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Sharing</p>
-          <h2>Shared by Me</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Sharing</p>
+          <h2 className="text-xl font-bold text-gray-100">Shared by Me</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Files you have shared with others. Manage permissions and remove access.
           </p>
         </div>
-        <div className="hero-badge">{shareCount} Shared</div>
+        <div className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm font-semibold rounded-lg">{shareCount} Shared</div>
       </section>
 
-      <div style={{ marginBottom: "20px" }}>
+      <div className="flex">
         <button
           type="button"
-          className="btn btn-primary"
+          className="px-5 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer"
           onClick={handleOpenShareModal}
         >
           Share File
         </button>
       </div>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
       {loading ? (
-        <div className="loading-state-card">
-          <div className="spinner" />
-          <p>Loading shared files...</p>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <div className="w-8 h-8 border-3 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Loading shared files...</p>
         </div>
       ) : shares.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="files-shared-grid">
+        <div className="grid grid-cols-3 gap-4">
           {shares.map((share) => (
-            <article key={share.shareId} className="file-card">
-              <div className="file-card-top">
+            <article key={share.shareId} className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="file-label">File Name</p>
-                  <h3>{share.originalName}</h3>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">File Name</p>
+                  <h3 className="text-lg font-bold text-gray-100">{share.originalName}</h3>
                 </div>
-                <span className="file-type-pill">{share.mimeType || "Unknown"}</span>
+                <span className="px-2.5 py-1 bg-gray-800 text-gray-300 text-[11px] font-bold uppercase rounded-md">{share.mimeType || "Unknown"}</span>
               </div>
 
-              <div className="file-meta-grid">
-                <div>
-                  <span>File Size</span>
-                  <strong>{formatFileSize(share.fileSize)}</strong>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">File Size</span>
+                  <strong className="text-gray-100">{formatFileSize(share.fileSize)}</strong>
                 </div>
-                <div>
-                  <span>Shared With</span>
-                  <strong>{share.sharedWith?.name || share.email || "Unknown"}</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Shared With</span>
+                  <strong className="text-gray-100">{share.sharedWith?.name || share.email || "Unknown"}</strong>
                 </div>
-                <div>
-                  <span>Shared Date</span>
-                  <strong>{new Date(share.sharedAt).toLocaleString()}</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Shared Date</span>
+                  <strong className="text-gray-100">{new Date(share.sharedAt).toLocaleString()}</strong>
                 </div>
-                <div>
-                  <span>Permissions</span>
-                  <strong>{share.permissions?.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(", ") || "View"}</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Permissions</span>
+                  <strong className="text-gray-100">{share.permissions?.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(", ") || "View"}</strong>
                 </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{share.status === "accepted" ? "Accepted" : "Pending"}</strong>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Status</span>
+                  <strong className="text-gray-100">{share.status === "accepted" ? "Accepted" : "Pending"}</strong>
                 </div>
               </div>
 
-              <div className="file-card-actions">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="file-action-button file-action-danger"
+                  className="px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition cursor-pointer"
                   onClick={() => handleRemoveShare(share.shareId)}
                 >
                   Remove Access

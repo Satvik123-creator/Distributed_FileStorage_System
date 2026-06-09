@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import { APP_PATHS } from "../routes/appRoutes.js";
 import fileService from "../services/fileService.js";
@@ -183,43 +184,66 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="dashboard-error-state">
-        <div className="error-card">
-          <p className="section-label">Dashboard Error</p>
-          <h2>We couldn't load your dashboard</h2>
-          <p>{error}</p>
-          <button type="button" className="file-action-button file-action-primary" onClick={() => setRetryNonce((v) => v + 1)}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center min-h-[60vh]"
+      >
+        <div className="text-center max-w-md p-8 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-400 text-xl">!</span>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-100 mb-1">Could not load dashboard</h2>
+          <p className="text-sm text-gray-400 mb-5">{error}</p>
+          <button
+            type="button"
+            className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            onClick={() => setRetryNonce((v) => v + 1)}
+          >
             Retry
           </button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="dashboard-page">
-      <section className="hero-panel">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col gap-5"
+    >
+      <div className="flex items-center justify-between">
         <div>
-          <p className="section-label">Analytics Dashboard</p>
-          <h2>Overview</h2>
-          <p className="hero-description">
-            Live operational view of file activity, storage usage, and node health across your distributed storage workspace.
-          </p>
+          <p className="text-xs font-medium text-gray-400 tracking-wide uppercase">Analytics Dashboard</p>
+          <h1 className="text-xl font-semibold text-gray-100 mt-0.5">Overview</h1>
         </div>
-        <div className="hero-badge">Live</div>
-      </section>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-900/30 border border-emerald-800/60">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-xs font-medium text-emerald-400">Live</span>
+        </div>
+      </div>
 
-      <section className="stats-grid dashboard-stats-grid">
+      <div className="grid grid-cols-3 gap-4">
         {statCards.map((stat) => (
           <StatsCard key={stat.label} {...stat} />
         ))}
-      </section>
+      </div>
 
-      <section className="dashboard-main-grid">
-        <RecentFiles files={latestFiles} onDownload={handleDownload} onViewDetails={handleViewDetails} />
+      <div className="grid grid-cols-2 gap-4">
+        <StorageUsageMeter
+          usedBytes={storageInfo.usedBytes}
+          limitBytes={storageInfo.limitBytes}
+          percent={storageInfo.percent}
+        />
 
         <RecentActivities activities={latestActivities} />
+      </div>
 
+      <RecentFiles files={latestFiles} onDownload={handleDownload} onViewDetails={handleViewDetails} />
+
+      <div className="grid grid-cols-3 gap-4">
         <NodeHealthWidget
           nodes={nodes}
           healthyCount={healthyCount}
@@ -229,24 +253,18 @@ const Dashboard = () => {
 
         <QuickActions actions={quickActions} />
 
-        <StorageAnalyticsWidget nodes={nodes} />
-
         <FailoverWidget
           totalFailovers={failoverStats.totalFailovers}
           lastFailoverTime={failoverStats.lastFailoverTime}
         />
+      </div>
 
+      <div className="grid grid-cols-3 gap-4">
+        <StorageAnalyticsWidget nodes={nodes} />
         <DedupAnalyticsWidget dedupStats={dedupStats} />
-
-        <StorageUsageMeter
-          usedBytes={storageInfo.usedBytes}
-          limitBytes={storageInfo.limitBytes}
-          percent={storageInfo.percent}
-        />
-
         <EncryptionWidget encryptionStatus={encryptionStatus} />
-      </section>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 

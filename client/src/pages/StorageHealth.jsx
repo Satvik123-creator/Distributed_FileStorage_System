@@ -160,20 +160,20 @@ const StorageHealth = () => {
   };
 
   return (
-    <div className="storage-health-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Infrastructure</p>
-          <h2>Storage Health</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Infrastructure</p>
+          <h2 className="text-xl font-bold text-gray-100">Storage Health</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Monitor node availability, inspect storage status, and repair
             missing replicas from a single operations dashboard.
           </p>
         </div>
-        <div className="hero-actions-group">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className="file-action-button file-action-primary"
+            className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
             onClick={() => fetchHealth(true)}
             disabled={refreshing || loading}
           >
@@ -181,7 +181,7 @@ const StorageHealth = () => {
           </button>
           <button
             type="button"
-            className="file-action-button modal-cancel-button"
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gray-800 text-gray-400 hover:bg-gray-700 transition cursor-pointer"
             onClick={() => setRepairModalOpen(true)}
           >
             Repair File
@@ -190,9 +190,9 @@ const StorageHealth = () => {
       </section>
 
       {summary.offlineNodes > 0 && (
-        <div className="feedback-banner feedback-warning">{systemAlert}</div>
+        <div className="px-4 py-3 rounded-xl text-sm bg-amber-900/30 text-amber-400 border border-amber-800">{systemAlert}</div>
       )}
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
       <StorageOverview summary={summary} />
       <HealthSummary
@@ -206,12 +206,12 @@ const StorageHealth = () => {
       />
 
       {loading ? (
-        <div className="loading-state-card">
-          <div className="spinner" />
-          <p>Loading storage health...</p>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <div className="w-8 h-8 border-3 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Loading storage health...</p>
         </div>
       ) : (
-        <div className="node-grid">
+        <div className="grid grid-cols-3 gap-4">
           {nodes.map((node) => (
             <NodeStatusCard
               key={node.nodeName}
@@ -232,9 +232,9 @@ const StorageHealth = () => {
         </div>
       )}
 
-      <div className="storage-footer-meta">
-        <span>Last Updated</span>
-        <strong>{lastUpdated || "Not updated yet"}</strong>
+      <div className="flex items-center gap-2 text-sm p-4 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+        <span className="text-gray-400">Last Updated</span>
+        <strong className="text-gray-100">{lastUpdated || "Not updated yet"}</strong>
       </div>
 
       <RepairModal

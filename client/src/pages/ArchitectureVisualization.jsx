@@ -116,11 +116,11 @@ const ArchitectureVisualization = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-skeleton">
-        <div className="skeleton skeleton-hero" />
-        <div className="skeleton skeleton-panel" style={{ height: 440 }} />
-        <div className="skeleton-grid">
-          {[1, 2, 3].map((i) => <div key={i} className="skeleton skeleton-card" />)}
+      <div className="flex flex-col gap-5">
+        <div className="rounded-xl bg-gray-800 animate-pulse h-24" />
+        <div className="rounded-xl bg-gray-800 animate-pulse" style={{ height: 440 }} />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <div key={i} className="rounded-xl bg-gray-800 animate-pulse h-32" />)}
         </div>
       </div>
     );
@@ -128,42 +128,42 @@ const ArchitectureVisualization = () => {
 
   if (error) {
     return (
-      <div className="dashboard-error-state">
-        <div className="error-card">
-          <p className="section-label">Architecture Error</p>
-          <h2>Could not load system visualization</h2>
-          <p>{error}</p>
-          <button type="button" className="file-action-button file-action-primary" onClick={fetchData}>Retry</button>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-lg p-5 border border-gray-800 rounded-xl bg-gray-900 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Architecture Error</p>
+          <h2 className="text-xl font-bold mt-1 text-gray-100">Could not load system visualization</h2>
+          <p className="text-sm text-gray-400 mt-2">{error}</p>
+          <button type="button" className="mt-4 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer" onClick={fetchData}>Retry</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="architecture-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">System Architecture</p>
-          <h2>Architecture Visualization</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">System Architecture</p>
+          <h2 className="text-xl font-bold text-gray-100">Architecture Visualization</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Live topology of the distributed file storage system — node health, replication paths, and infrastructure metrics.
           </p>
         </div>
-        <div className="hero-actions-group">
-          <span className={`arch-health-badge ${offlineCount > 0 ? "arch-health-warn" : "arch-health-ok"}`}>
-            <span className="arch-health-dot" />
+        <div className="flex items-center gap-2">
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${offlineCount > 0 ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}>
+            <span className={`w-2 h-2 rounded-full ${offlineCount > 0 ? "bg-red-500" : "bg-emerald-500"}`} />
             {systemAlert}
           </span>
-          <button type="button" className="file-action-button file-action-primary" onClick={fetchData}>
+          <button type="button" className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer" onClick={fetchData}>
             Refresh
           </button>
         </div>
       </section>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
-      <section className="arch-diagram-section">
-        <svg viewBox="0 0 800 360" className="arch-svg" preserveAspectRatio="xMidYMid meet">
+      <section className="p-5 border border-gray-800 rounded-xl bg-gray-900 shadow-sm">
+        <svg viewBox="0 0 800 360" className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
           <defs>
             <marker id="arrowDown" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto">
               <path d="M0,0 L8,4 L0,8 Z" fill="#6366f1" />
@@ -179,6 +179,20 @@ const ArchitectureVisualization = () => {
               <stop offset="0%" stopColor="#4f46e5" />
               <stop offset="100%" stopColor="#7c3aed" />
             </linearGradient>
+            <style>{`
+              @keyframes archFlowDash { to { stroke-dashoffset: -20; } }
+              @keyframes archRepFlow { to { stroke-dashoffset: -16; } }
+              .arch-flow-line { stroke-dasharray: 6,4; animation: archFlowDash 1s linear infinite; }
+              .arch-flow-delay-1 { animation-delay: -0.3s; }
+              .arch-flow-delay-2 { animation-delay: -0.6s; }
+              .arch-flow-delay-3 { animation-delay: -0.9s; }
+              .arch-rep-line { stroke-dasharray: 6,4; animation: archRepFlow 0.8s linear infinite; }
+              .arch-rep-1-rev, .arch-rep-2-rev, .arch-rep-3-rev { animation-direction: reverse; }
+              @keyframes archDotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+              .arch-node-dot { animation: archDotPulse 2s ease-in-out infinite; }
+              @keyframes archLabelFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+              .arch-svg-node-active text:last-child { animation: archLabelFade 0.3s ease-out; }
+            `}</style>
           </defs>
 
           {/* Connection lines: User → Backend */}
@@ -198,11 +212,11 @@ const ArchitectureVisualization = () => {
           <path d={`M548,310 L252,310`} stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="4,6" fill="none" markerEnd="url(#arrowReplica)" className="arch-rep-line arch-rep-3-rev" />
 
           {/* Replication label */}
-          <text x="400" y="324" textAnchor="middle" fontSize="10" fill="#64748b" className="arch-rep-label">Replication Links</text>
+          <text x="400" y="324" textAnchor="middle" fontSize="10" fill="#64748b">Replication Links</text>
 
           {/* User node */}
-          <g className={`arch-svg-node ${diagramNode === "user" ? "arch-svg-node-active" : ""}`} onClick={() => setDiagramNode(diagramNode === "user" ? null : "user")} style={{ cursor: "pointer" }}>
-            <rect x={340} y={30} width={120} height={44} rx={22} fill="url(#userGrad)" className="arch-node-rect" />
+          <g className={diagramNode === "user" ? "arch-svg-node-active" : ""} onClick={() => setDiagramNode(diagramNode === "user" ? null : "user")} style={{ cursor: "pointer" }}>
+            <rect x={340} y={30} width={120} height={44} rx={22} fill="url(#userGrad)" />
             <text x={400} y={56} textAnchor="middle" fill="#fff" fontSize={13} fontWeight={700}>User</text>
             {diagramNode === "user" && (
               <text x={400} y={84} textAnchor="middle" fill="#94a3b8" fontSize={11}>Web Browser / Client</text>
@@ -210,8 +224,8 @@ const ArchitectureVisualization = () => {
           </g>
 
           {/* Backend node */}
-          <g className={`arch-svg-node ${diagramNode === "backend" ? "arch-svg-node-active" : ""}`} onClick={() => setDiagramNode(diagramNode === "backend" ? null : "backend")} style={{ cursor: "pointer" }}>
-            <rect x={320} y={118} width={160} height={44} rx={22} fill="url(#backendGrad)" className="arch-node-rect" />
+          <g className={diagramNode === "backend" ? "arch-svg-node-active" : ""} onClick={() => setDiagramNode(diagramNode === "backend" ? null : "backend")} style={{ cursor: "pointer" }}>
+            <rect x={320} y={118} width={160} height={44} rx={22} fill="url(#backendGrad)" />
             <text x={400} y={144} textAnchor="middle" fill="#fff" fontSize={13} fontWeight={700}>Backend API</text>
             {diagramNode === "backend" && (
               <text x={400} y={174} textAnchor="middle" fill="#94a3b8" fontSize={11}>Express.js · JWT Auth · REST</text>
@@ -219,24 +233,24 @@ const ArchitectureVisualization = () => {
           </g>
 
           {/* Node 1 */}
-          <g className={`arch-svg-node ${diagramNode === "node1" ? "arch-svg-node-active" : ""}`} onClick={() => setDiagramNode(diagramNode === "node1" ? null : "node1")} style={{ cursor: "pointer" }}>
-            <rect x={110} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node1") === "healthy" ? "#10b981" : getNodeStatus("node1") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} className="arch-node-rect" />
+          <g className={diagramNode === "node1" ? "arch-svg-node-active" : ""} onClick={() => setDiagramNode(diagramNode === "node1" ? null : "node1")} style={{ cursor: "pointer" }}>
+            <rect x={110} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node1") === "healthy" ? "#10b981" : getNodeStatus("node1") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} />
             <circle cx={130} cy={276} r={5} fill={NODE_COLORS[getNodeStatus("node1")] || NODE_COLORS.unknown} className="arch-node-dot" />
             <text x={148} y={272} fill="#e2e8f0" fontSize={13} fontWeight={700}>Node 1</text>
             <text x={148} y={288} fill="#94a3b8" fontSize={10}>{selectedFile?.primaryNode === "node1" ? "● Primary" : "Storage"}</text>
           </g>
 
           {/* Node 2 */}
-          <g className={`arch-svg-node ${diagramNode === "node2" ? "arch-svg-node-active" : ""}`} onClick={() => setDiagramNode(diagramNode === "node2" ? null : "node2")} style={{ cursor: "pointer" }}>
-            <rect x={330} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node2") === "healthy" ? "#10b981" : getNodeStatus("node2") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} className="arch-node-rect" />
+          <g className={diagramNode === "node2" ? "arch-svg-node-active" : ""} onClick={() => setDiagramNode(diagramNode === "node2" ? null : "node2")} style={{ cursor: "pointer" }}>
+            <rect x={330} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node2") === "healthy" ? "#10b981" : getNodeStatus("node2") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} />
             <circle cx={350} cy={276} r={5} fill={NODE_COLORS[getNodeStatus("node2")] || NODE_COLORS.unknown} className="arch-node-dot" />
             <text x={368} y={272} fill="#e2e8f0" fontSize={13} fontWeight={700}>Node 2</text>
             <text x={368} y={288} fill="#94a3b8" fontSize={10}>{selectedFile?.primaryNode === "node2" ? "● Primary" : selectedFile?.replicaNode === "node2" ? "● Replica" : "Storage"}</text>
           </g>
 
           {/* Node 3 */}
-          <g className={`arch-svg-node ${diagramNode === "node3" ? "arch-svg-node-active" : ""}`} onClick={() => setDiagramNode(diagramNode === "node3" ? null : "node3")} style={{ cursor: "pointer" }}>
-            <rect x={550} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node3") === "healthy" ? "#10b981" : getNodeStatus("node3") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} className="arch-node-rect" />
+          <g className={diagramNode === "node3" ? "arch-svg-node-active" : ""} onClick={() => setDiagramNode(diagramNode === "node3" ? null : "node3")} style={{ cursor: "pointer" }}>
+            <rect x={550} y={250} width={140} height={52} rx={14} fill="#1e293b" stroke={getNodeStatus("node3") === "healthy" ? "#10b981" : getNodeStatus("node3") === "offline" ? "#ef4444" : "#f59e0b"} strokeWidth={2} />
             <circle cx={570} cy={276} r={5} fill={NODE_COLORS[getNodeStatus("node3")] || NODE_COLORS.unknown} className="arch-node-dot" />
             <text x={588} y={272} fill="#e2e8f0" fontSize={13} fontWeight={700}>Node 3</text>
             <text x={588} y={288} fill="#94a3b8" fontSize={10}>{selectedFile?.primaryNode === "node3" ? "● Primary" : selectedFile?.replicaNode === "node3" ? "● Replica" : "Storage"}</text>
@@ -244,14 +258,14 @@ const ArchitectureVisualization = () => {
         </svg>
       </section>
 
-      <section className="arch-file-section">
-        <div className="arch-file-selector">
-          <label htmlFor="arch-file-picker">Select a file to trace replication</label>
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <label htmlFor="arch-file-picker" className="text-sm font-semibold text-gray-100">Select a file to trace replication</label>
           <select
             id="arch-file-picker"
             value={selectedFileId}
             onChange={(e) => setSelectedFileId(e.target.value)}
-            className="arch-select"
+            className="px-3.5 py-2.5 border border-gray-700 rounded-xl bg-gray-800 text-gray-100 text-sm outline-none focus:border-gray-500 transition min-w-[240px]"
           >
             <option value="">— Select a file —</option>
             {files.map((f) => (
@@ -263,27 +277,27 @@ const ArchitectureVisualization = () => {
         </div>
 
         {selectedFile && (
-          <div className="arch-file-details">
-            <div className="arch-detail-card arch-detail-primary">
-              <span className="arch-detail-label">Primary Node</span>
-              <strong className="arch-detail-value">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 border border-blue-800 rounded-xl bg-blue-900/20 grid gap-1">
+              <span className="text-xs text-gray-400">Primary Node</span>
+              <strong className="text-lg font-bold text-gray-100">
                 {selectedFile.primaryNode || "Unknown"}
               </strong>
-              <span className="arch-detail-desc">File storage location</span>
+              <span className="text-xs text-gray-500">File storage location</span>
             </div>
-            <div className="arch-detail-card arch-detail-replica">
-              <span className="arch-detail-label">Replica Node</span>
-              <strong className="arch-detail-value">
+            <div className="p-4 border border-cyan-800 rounded-xl bg-cyan-900/20 grid gap-1">
+              <span className="text-xs text-gray-400">Replica Node</span>
+              <strong className="text-lg font-bold text-gray-100">
                 {selectedFile.replicaNode || "None"}
               </strong>
-              <span className="arch-detail-desc">Failover backup location</span>
+              <span className="text-xs text-gray-500">Failover backup location</span>
             </div>
-            <div className="arch-detail-card arch-detail-meta">
-              <span className="arch-detail-label">Encryption</span>
-              <strong className="arch-detail-value">
+            <div className="p-4 border border-gray-700 rounded-xl bg-gray-800 grid gap-1">
+              <span className="text-xs text-gray-400">Encryption</span>
+              <strong className="text-lg font-bold text-gray-100">
                 {selectedFile.encrypted ? "AES-256-GCM" : "Not Encrypted"}
               </strong>
-              <span className="arch-detail-desc">
+              <span className="text-xs text-gray-500">
                 {selectedFile.encrypted ? `v${selectedFile.encryptionVersion || 1} · File protected` : "File stored in plaintext"}
               </span>
             </div>
@@ -291,59 +305,56 @@ const ArchitectureVisualization = () => {
         )}
 
         {!selectedFile && selectedFileId && (
-          <div className="feedback-banner feedback-warning">Selected file not found in loaded data.</div>
+          <div className="px-4 py-3 rounded-xl text-sm bg-amber-900/30 text-amber-400 border border-amber-800">Selected file not found in loaded data.</div>
         )}
       </section>
 
-      <section className="arch-metrics-grid">
-        <div className="dashboard-panel arch-panel-node-status">
-          <div className="panel-header">
+      <section className="grid grid-cols-3 gap-4">
+        <div className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Infrastructure</p>
-              <h3>Node Status</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Infrastructure</p>
+              <h3 className="text-lg font-bold text-gray-100">Node Status</h3>
             </div>
-            <span className="arch-summary">{healthyCount}/{nodeList.length} healthy</span>
+            <span className="text-sm text-gray-400">{healthyCount}/{nodeList.length} healthy</span>
           </div>
-          <div className="arch-node-status-list">
+          <div className="flex flex-col gap-2">
             {nodeList.map((node) => (
-              <div key={node.name} className={`arch-node-row arch-node-${node.status}`}>
-                <span className="arch-node-row-indicator" style={{ background: node.color }} />
-                <div className="arch-node-row-info">
-                  <strong className="arch-node-row-name">{node.name}</strong>
-                  <span className="arch-node-row-status">{node.status}</span>
+              <div key={node.name} className="flex items-center gap-3 p-3 rounded-xl bg-gray-800 border border-gray-700">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: node.color }} />
+                <div className="flex-1 min-w-0">
+                  <strong className="text-sm text-gray-100 capitalize block">{node.name}</strong>
+                  <span className="text-xs text-gray-400">{node.status}</span>
                 </div>
-                <div className="arch-node-row-meta">
-                  <span>{node.storedFilesCount} files</span>
-                  <span>{formatBytes(node.storageUsed)}</span>
+                <div className="text-right text-xs text-gray-400">
+                  <div>{node.storedFilesCount} files</div>
+                  <div>{formatBytes(node.storageUsed)}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="dashboard-panel arch-panel-storage">
-          <div className="panel-header">
+        <div className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Capacity</p>
-              <h3>Storage Utilization</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Capacity</p>
+              <h3 className="text-lg font-bold text-gray-100">Storage Utilization</h3>
             </div>
           </div>
-          <div className="arch-storage-list">
+          <div className="flex flex-col gap-4">
             {nodeList.map((node) => {
               const pct = maxStorage > 0 ? Math.round((node.storageUsed / maxStorage) * 100) : 0;
               return (
-                <div key={node.name} className="arch-storage-row">
-                  <div className="arch-storage-row-header">
-                    <span className="arch-storage-row-name" style={{ color: node.color }}>
+                <div key={node.name} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-100" style={{ color: node.color }}>
                       ● {node.name}
                     </span>
-                    <span className="arch-storage-row-value">{formatBytes(node.storageUsed)}</span>
+                    <span className="text-sm text-gray-400">{formatBytes(node.storageUsed)}</span>
                   </div>
-                  <div className="arch-storage-bar-track">
-                    <div
-                      className="arch-storage-bar-fill"
-                      style={{ width: `${Math.max(pct, 4)}%`, background: node.color }}
-                    />
+                  <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 4)}%`, background: node.color }} />
                   </div>
                 </div>
               );
@@ -351,37 +362,37 @@ const ArchitectureVisualization = () => {
           </div>
         </div>
 
-        <div className="dashboard-panel arch-panel-failover">
-          <div className="panel-header">
+        <div className="p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm grid gap-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="section-label">Resilience</p>
-              <h3>Failover Events</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Resilience</p>
+              <h3 className="text-lg font-bold text-gray-100">Failover Events</h3>
             </div>
-            <span className="arch-summary">{failoverStats.totalFailovers ?? 0} total</span>
+            <span className="text-sm text-gray-400">{failoverStats.totalFailovers ?? 0} total</span>
           </div>
           {recentFailovers.length === 0 ? (
-            <div className="arch-failover-empty">
+            <div className="text-center text-gray-400 text-sm py-6">
               <p>No failover events recorded yet.</p>
             </div>
           ) : (
-            <div className="arch-failover-list">
+            <div className="flex flex-col gap-2">
               {recentFailovers.map((event, i) => (
-                <div key={event._id || i} className="arch-failover-row">
-                  <div className="arch-failover-indicator">
-                    <span className={`arch-failover-dot ${event.success ? "arch-failover-ok" : "arch-failover-fail"}`} />
+                <div key={event._id || i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-800 border border-gray-700">
+                  <div className="flex-shrink-0">
+                    <span className={`w-2.5 h-2.5 rounded-full block ${event.success ? "bg-emerald-500" : "bg-red-500"}`} />
                   </div>
-                  <div className="arch-failover-info">
-                    <strong>{event.failedNode} → {event.promotedNode || "standby"}</strong>
-                    {event.reason && <span className="arch-failover-reason">{event.reason}</span>}
+                  <div className="flex-1 min-w-0">
+                    <strong className="text-sm text-gray-100 block">{event.failedNode} → {event.promotedNode || "standby"}</strong>
+                    {event.reason && <span className="text-xs text-gray-400">{event.reason}</span>}
                   </div>
-                  <span className="arch-failover-time">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {event.createdAt ? new Date(event.createdAt).toLocaleDateString() : ""}
                   </span>
                 </div>
               ))}
             </div>
           )}
-          <button type="button" className="file-action-button file-action-primary arch-failover-link" onClick={() => navigate(APP_PATHS.failoverHistory)}>
+          <button type="button" className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer" onClick={() => navigate(APP_PATHS.failoverHistory)}>
             View Full History →
           </button>
         </div>

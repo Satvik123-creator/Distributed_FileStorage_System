@@ -21,34 +21,34 @@ const SearchResultCard = ({
   const isDeleting = deletingId === file.fileId;
 
   return (
-    <article className="file-card">
-      <div className="file-card-top">
+    <article className="p-5 border border-gray-800 rounded-xl bg-gray-900 shadow-sm grid gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="file-label">File Name</p>
-          <h3>{file.originalName}</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">File Name</p>
+          <h3 className="text-lg font-bold text-gray-100">{file.originalName}</h3>
         </div>
-        <span className="file-type-pill">{file.mimeType || "Unknown"}</span>
+        <span className="px-2.5 py-1 bg-gray-800 text-gray-300 text-[11px] font-bold uppercase rounded-md">{file.mimeType || "Unknown"}</span>
       </div>
 
-      <div className="file-meta-grid">
-        <div>
-          <span>File Size</span>
-          <strong>{formatFileSize(file.fileSize)}</strong>
+      <div className="grid grid-cols-3 gap-3 text-sm">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">File Size</span>
+          <strong className="text-gray-100">{formatFileSize(file.fileSize)}</strong>
         </div>
-        <div>
-          <span>Upload Date</span>
-          <strong>{new Date(file.uploadedAt).toLocaleString()}</strong>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Upload Date</span>
+          <strong className="text-gray-100">{new Date(file.uploadedAt).toLocaleString()}</strong>
         </div>
-        <div>
-          <span>Node Location</span>
-          <strong>{file.nodeLocation || "Unknown"}</strong>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs text-gray-400">Node Location</span>
+          <strong className="text-gray-100">{file.nodeLocation || "Unknown"}</strong>
         </div>
       </div>
 
-      <div className="file-card-actions">
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          className="file-action-button file-action-primary"
+          className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
           onClick={() => onDownload(file)}
           disabled={isDownloading || isDeleting}
         >
@@ -58,7 +58,7 @@ const SearchResultCard = ({
         </button>
         <button
           type="button"
-          className="file-action-button file-action-danger"
+          className="px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition cursor-pointer disabled:opacity-50"
           onClick={() => onDelete(file)}
           disabled={isDeleting || isDownloading}
         >

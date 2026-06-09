@@ -9,11 +9,11 @@ const StorageOverview = ({ summary }) => {
   ];
 
   return (
-    <section className="storage-overview-grid">
+    <section className="grid grid-cols-4 gap-4">
       {cards.map((card) => (
-        <article key={card.label} className="storage-overview-card">
-          <p>{card.label}</p>
-          <h3>{card.value}</h3>
+        <article key={card.label} className="p-4 border border-gray-800 rounded-xl bg-gray-900 shadow-sm grid gap-2">
+          <p className="text-xs text-gray-400">{card.label}</p>
+          <h3 className="text-xl font-bold text-gray-100">{card.value}</h3>
         </article>
       ))}
     </section>

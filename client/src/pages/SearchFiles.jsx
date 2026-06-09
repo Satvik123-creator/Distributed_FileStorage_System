@@ -206,17 +206,17 @@ const SearchFiles = () => {
   );
 
   return (
-    <div className="search-files-page">
-      <section className="hero-panel compact-hero">
+    <div className="flex flex-col gap-5">
+      <section className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Search Storage</p>
-          <h2>Search Files</h2>
-          <p className="hero-description">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-400">Search Storage</p>
+          <h2 className="text-xl font-bold text-gray-100">Search Files</h2>
+          <p className="text-sm text-gray-500 max-w-[760px]">
             Search by filename, file type, or upload date range. Empty searches
             return all your files.
           </p>
         </div>
-        <div className="hero-badge">{files.length} Results</div>
+        <div className="px-3 py-1.5 bg-gray-800 text-gray-300 text-sm font-semibold rounded-lg">{files.length} Results</div>
       </section>
 
       <SearchBar
@@ -229,12 +229,12 @@ const SearchFiles = () => {
 
       <SearchFilters filters={draftFilters} onChange={updateFilter} />
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
       {loading ? (
-        <div className="loading-state-card">
-          <div className="spinner" />
-          <p>Searching files...</p>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
+          <div className="w-8 h-8 border-3 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Searching files...</p>
         </div>
       ) : files.length === 0 ? (
         <NoResults

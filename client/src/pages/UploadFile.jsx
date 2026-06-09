@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Upload, Shield, Server as ServerIcon } from "lucide-react";
 import FileDropZone from "../components/FileDropZone.jsx";
 import UploadProgress from "../components/UploadProgress.jsx";
 import SelectedFileCard from "../components/SelectedFileCard.jsx";
@@ -14,23 +16,18 @@ const CHUNKED_UPLOAD_THRESHOLD = 10 * 1024 * 1024;
 
 const getFriendlyError = (error) => {
   if (!error) return "Upload failed. Please try again.";
-
   if (error.response?.status === 401 || error.response?.status === 403) {
     return "Your session has expired. Please log in again.";
   }
-
   if (error.response?.status === 413) {
     return `File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`;
   }
-
   if (error.response?.data?.message) {
     return error.response.data.message;
   }
-
   if (error.message === "Network Error") {
     return "Unable to reach the server. Please check your connection and try again.";
   }
-
   return "Upload failed. Please try again.";
 };
 
@@ -53,13 +50,11 @@ const UploadFile = () => {
   const handleFileSelect = (file) => {
     setError("");
     setSuccessData(null);
-
     if (!file) return;
     if (file.size <= 0) {
       setError("Empty files cannot be uploaded.");
       return;
     }
-
     setSelectedFile(file);
     setStatus("Ready to Upload");
     setProgress(0);
@@ -158,27 +153,34 @@ const UploadFile = () => {
   };
 
   return (
-    <div className="upload-page">
-      <section className="hero-panel compact-hero">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="flex flex-col gap-5"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 p-5 rounded-xl border border-gray-800 bg-gray-900 shadow-sm">
         <div>
-          <p className="section-label">Cloud Upload</p>
-          <h2>Upload File</h2>
-          <p className="hero-description">
-            Drag and drop a file or browse from your device. Uploads are
-            protected by JWT authentication and sent as multipart form data.
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-gray-500">Cloud Upload</p>
+          <h2 className="text-xl font-bold text-gray-100 mt-0.5">Upload File</h2>
+          <p className="text-sm text-gray-500 mt-1 max-w-[760px]">
+            Drag and drop a file or browse from your device. Uploads are protected by JWT authentication and sent as multipart form data.
           </p>
         </div>
-        <div
-          className={`hero-badge ${status === "Success" ? "hero-badge-success" : ""}`}
-        >
+        <div className={`px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${
+          status === "Success" ? "bg-emerald-900/30 text-emerald-400" : "bg-gray-800 text-gray-400"
+        }`}>
           {status}
         </div>
-      </section>
+      </div>
 
-      {error && <div className="feedback-banner feedback-error">{error}</div>}
+      {error && <div className="px-4 py-3 rounded-xl text-sm bg-red-900/30 text-red-400 border border-red-800">{error}</div>}
 
-      <div className="upload-grid">
-        <div className="upload-main-column">
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+        {/* Main column */}
+        <div className="flex flex-col gap-4">
           {chunkedUpload ? (
             <ChunkedUploadManager
               file={chunkedUpload}
@@ -195,22 +197,29 @@ const UploadFile = () => {
 
               {selectedFile && (
                 <>
-                  <SelectedFileCard
-                    file={selectedFile}
-                    onClear={clearSelectedFile}
-                  />
-                  <div className="upload-actions-row">
+                  <SelectedFileCard file={selectedFile} onClear={clearSelectedFile} />
+                  <div className="flex items-center gap-4">
                     <button
                       type="button"
-                      className="file-action-button file-action-primary upload-button"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
                       onClick={handleUpload}
                       disabled={!canUpload}
                     >
-                      {isUploading ? "Uploading..." : "Upload File"}
+                      {isUploading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Upload File
+                        </>
+                      )}
                     </button>
-                    <div className="upload-limit-note">
+                    <span className="text-xs text-gray-500">
                       Files up to {MAX_FILE_SIZE_MB} MB upload directly; larger files use chunked upload
-                    </div>
+                    </span>
                   </div>
                 </>
               )}
@@ -218,26 +227,44 @@ const UploadFile = () => {
           )}
         </div>
 
-        <aside className="upload-side-panel">
+        {/* Side panel */}
+        <aside className="flex flex-col gap-4">
           {chunkedUpload ? (
-            <div className="upload-progress-card">
-              <div className="upload-progress-header">
-                <strong>Chunked Upload Active</strong>
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center">
+                  <ServerIcon className="w-4 h-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-100">Chunked Upload Active</p>
+                </div>
               </div>
-              <p className="chunked-side-note">
+              <p className="text-sm text-gray-500">
                 Large file upload in progress. Progress details are shown in the main panel.
               </p>
             </div>
           ) : (
             <>
               <UploadProgress status={status} progress={progress} />
-              <div className="upload-status-card">
-                <h3>Upload States</h3>
-                <ul>
-                  <li>Ready to Upload</li>
-                  <li>Uploading</li>
-                  <li>Success</li>
-                  <li>Failed</li>
+              <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-100 mb-2">Upload States</h3>
+                <ul className="space-y-1.5 text-sm text-gray-500">
+                  <li className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${status === "Ready to Upload" ? "bg-gray-100" : "bg-gray-700"}`} />
+                    Ready to Upload
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${status === "Uploading" ? "bg-gray-100" : "bg-gray-700"}`} />
+                    Uploading
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${status === "Success" ? "bg-emerald-500" : "bg-gray-700"}`} />
+                    Success
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${status === "Failed" ? "bg-red-500" : "bg-gray-700"}`} />
+                    Failed
+                  </li>
                 </ul>
               </div>
             </>
@@ -251,7 +278,7 @@ const UploadFile = () => {
         onUploadAnother={uploadAnother}
         onGoToMyFiles={() => navigate(APP_PATHS.myFiles)}
       />
-    </div>
+    </motion.div>
   );
 };
 
