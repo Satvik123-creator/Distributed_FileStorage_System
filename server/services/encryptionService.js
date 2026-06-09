@@ -88,7 +88,8 @@ const getUserKey = async (userId) => {
 };
 
 const encryptBuffer = async (buffer, userId) => {
-  const { key, keyId, version } = await getOrCreateUserKey(userId);
+  await getOrCreateUserKey(userId);
+  const { key, keyId, version } = await getUserKey(userId);
 
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
